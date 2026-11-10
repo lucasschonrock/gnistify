@@ -4,6 +4,7 @@
 ## Author: Gnisterne
 ## Version: @project-version@
 ## SavedVariables: GnistifyDB
+## X-Curse-Project-ID: 1796132
 
 Gnistify.lua
 Emojis.lua
