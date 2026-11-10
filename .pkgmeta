@@ -6,3 +6,4 @@ package-as: Gnistify
 ignore:
   - CLAUDE.md
   - README.md
+  - art

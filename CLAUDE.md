@@ -131,7 +131,7 @@ files (`.lua`, `.toc`, `sound.mp3`, `emojis/`), run this command to copy the rep
 the game's AddOns folder:
 
 ```bash
-rsync -a --delete --exclude '.git' --exclude '.github' --exclude '.DS_Store' --exclude '.gitignore' --exclude '.pkgmeta' --exclude 'CLAUDE.md' --exclude 'README.md' ~/Documents/GitHub/gnistify/ "/Applications/World of Warcraft/_forever_/Interface/AddOns/Gnistify/"
+rsync -a --delete --exclude '.git' --exclude '.github' --exclude '.DS_Store' --exclude '.gitignore' --exclude '.pkgmeta' --exclude 'CLAUDE.md' --exclude 'README.md' --exclude 'art' ~/Documents/GitHub/gnistify/ "/Applications/World of Warcraft/_forever_/Interface/AddOns/Gnistify/"
 ```
 
 Then tell the user what they need to do in-game. Lua and `.toc` changes need
