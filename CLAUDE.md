@@ -99,7 +99,9 @@ every Gnistify user sees this in their own chat window (not guild chat):
 `<gnist icon> Killer (med Anna og Bo) gnistede Offer (lvl 34 Magiker) til døde i Zone! (dagens drab nr. 3)`
 The wording is picked at random from `KILL_MSGS` (placeholders `{killer}`, `{victim}`,
 `{zone}`). The victim's name is shown in their class colour. The killer also sees the
-line and hears the sound on their own screen.
+line and hears the sound on their own screen. The banner (setting `killBanner`) uses a short line
+from `KILL_BANNERS` instead (killer and victim only), because the full line is too long
+for the middle of the screen.
 
 - **Who announces:** only the client of the player who landed the killing blow. This
   stops duplicates when several guildies are grouped together. Detection uses the

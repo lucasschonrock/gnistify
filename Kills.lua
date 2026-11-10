@@ -31,6 +31,15 @@ local KILL_MSGS = {
     "{victim} mødte gnisten i {zone}. Gnisten hedder {killer}!",
     "{killer} gav {victim} en gratis tur til spirit healeren i {zone}!",
 }
+-- Short lines for the banner in the middle of the screen (the chat line has
+-- all the details). {killer} is just the name, {victim} the coloured name.
+local KILL_BANNERS = {
+    "{killer} gnistede {victim}!",
+    "{victim} gik op i gnister!",
+    "{killer} slukkede {victim}!",
+    "{killer} sendte {victim} til kirkegården!",
+    "{killer} lagde {victim} ned!",
+}
 local MAX_ASSISTS = 4   -- names shown in "(med ...)"; the rest becomes "+N"
 local KILL_SOUND = "Interface\\AddOns\\Gnistify\\sound.mp3"
 
@@ -105,7 +114,11 @@ local function Show(killer, victim, level, classFile, zone, assists, count)
     DEFAULT_CHAT_FRAME:AddMessage(GNIST_ICON .. " " .. text)
     -- The same line as a raid-warning style banner, like dings (can be turned off)
     if GnistifyDB.killBanner and RaidNotice_AddMessage and RaidWarningFrame then
-        RaidNotice_AddMessage(RaidWarningFrame, GNIST_ICON .. " " .. text, ChatTypeInfo["GUILD"])
+        local banner = ns.Fill(ns.Pick(KILL_BANNERS), {
+            killer = "|cffff6600" .. killer .. "|r",
+            victim = ColoredName(victim, classFile),
+        })
+        RaidNotice_AddMessage(RaidWarningFrame, GNIST_ICON .. " " .. banner, ChatTypeInfo["GUILD"])
     end
     if GnistifyDB.killSound then
         PlaySoundFile(KILL_SOUND, "Master")
