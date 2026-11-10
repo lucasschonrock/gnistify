@@ -1,8 +1,14 @@
-# Builds Gnistify.zip and uploads it to CurseForge + GitHub Releases
-# whenever a version tag (e.g. v1.0.0) is pushed.
+# Builds Gnistify.zip and uploads it to CurseForge + GitHub Releases.
+#
+#  - Every push to main that changes the addon makes a new patch release
+#    (v1.0.0 -> v1.0.1 -> ...). The tag is created automatically.
+#  - Pushing your own tag (e.g. v1.1.0) releases that version instead, so
+#    bigger version jumps are still possible.
+#  - Pushes that only touch docs, art or this workflow don't release.
+#    Add [skip ci] to a commit message to skip a release on purpose.
 #
 # Needs (GitHub repo -> Settings -> Secrets and variables -> Actions):
-#   Secret   CF_API_KEY       - CurseForge API token (curseforge.com/account/api-tokens)
+#   Secret   CF_API_KEY       - CurseForge API token
 #   Variable CF_GAME_VERSION  - optional, Classic Era version on CurseForge (default 1.15.8)
 # and "## X-Curse-Project-ID: <id>" in Gnistify.toc.
 
@@ -10,11 +16,23 @@ name: Release
 
 on:
   push:
+    branches:
+      - main
     tags:
       - "v*"
+    paths-ignore:          # only applies to branch pushes
+      - "README.md"
+      - "CLAUDE.md"
+      - "art/**"
+      - ".github/**"
+      - ".gitignore"
 
 permissions:
-  contents: write   # lets the packager create the GitHub release
+  contents: write   # create tags and the GitHub release
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   release:
@@ -22,9 +40,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # packager needs the tag history for the changelog
+          fetch-depth: 0   # need all tags to work out the next version
+
+      - name: Tag next version (pushes to main only)
+        id: tag
+        if: github.ref_type == 'branch'
+        run: |
+          if git describe --exact-match --tags HEAD >/dev/null 2>&1; then
+            echo "HEAD is already tagged ($(git describe --exact-match --tags HEAD)), skipping"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          last=$(git tag --list 'v*' --sort=-v:refname | head -n1)
+          last=${last:-v0.0.0}
+          IFS=. read -r major minor patch <<< "${last#v}"
+          next="v${major}.${minor}.$((patch + 1))"
+          echo "Releasing $next (previous: $last)"
+          git tag "$next"
+          git push origin "$next"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
 
       - uses: BigWigsMods/packager@v2
+        if: steps.tag.outputs.skip != 'true'
         with:
           # WoW Forever's own interface number (16001) isn't a CurseForge game
           # version, so tell CurseForge which Classic Era version to list.

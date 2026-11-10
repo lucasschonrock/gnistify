@@ -140,8 +140,15 @@ of WoW.
 
 ## Releases (CurseForge and GitHub)
 
-- Pushing a `v*` tag runs `.github/workflows/release.yml`. It uses the BigWigs packager
-  to build the zip and upload it to CurseForge and to GitHub Releases.
+- **Every push to `main` is a release.** `.github/workflows/release.yml` bumps the patch
+  version (for example `v1.0.3` → `v1.0.4`), creates and pushes the tag, then runs the
+  BigWigs packager to build the zip and upload it to CurseForge and GitHub Releases.
+  - Pushing a tag yourself, such as `v1.1.0`, releases that version instead. Use this for
+    minor or major version bumps.
+  - Pushes that only change `README.md`, `CLAUDE.md`, `art/`, `.github/` or
+    `.gitignore` don't release.
+  - `[skip ci]` in a commit message skips the release on purpose.
+  - So **pushing to `main` publishes to CurseForge.** Only push when the user asks.
 - `.pkgmeta` packages the addon as the folder `Gnistify` (capital G) and leaves out
   `CLAUDE.md` and `README.md`. Dotfiles are left out automatically.
 - `## Version: @project-version@` in the `.toc` is replaced with the tag name.

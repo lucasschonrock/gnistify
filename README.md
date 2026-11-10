@@ -29,5 +29,11 @@ En WoW-addon til guilden **Gnisterne** på WoW Forever. Længe leve gnisten!
 
 ## Ny version (for udviklere)
 
-Lav et git-tag, fx `v1.1.0`, og push det. Så bygger GitHub automatisk zip-filen og
-lægger den op på GitHub Releases og CurseForge.
+Hver gang du pusher til `main`, laver GitHub automatisk en ny version (fx `v1.0.1`),
+bygger zip-filen og lægger den op på GitHub Releases og CurseForge.
+
+- Hvis du vil hoppe til et større versionsnummer, så lav selv et tag, fx `v1.1.0`, og
+  push det.
+- Ændringer, der kun rører README, CLAUDE.md, `art/` eller `.github/`, giver ikke en ny
+  version.
+- Skriv `[skip ci]` i commit-beskeden, hvis en push ikke skal blive til en version.
