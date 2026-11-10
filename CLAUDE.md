@@ -57,6 +57,11 @@ celebrated (the `announced` table), so the same ding never shows twice.
    - `GUILD_ROSTER_UPDATE` with `canRequestRosterUpdate` set also triggers a fetch.
    - `ScanRoster` compares levels with the `knownLevels` table. The first scan after
      login only records levels and doesn't celebrate anything.
+   - For 20 sec after every loading screen (`PLAYER_ENTERING_WORLD`: login, `/reload`,
+     zoning) roster and `UNIT_LEVEL` changes are only recorded, not celebrated, and a
+     jump of more than 2 levels is never celebrated. The roster arrives in pieces or
+     with stale levels then, which used to cause false dings at login. `DING:`
+     messages from addon users are always trusted.
 
 The celebration plays sound `888` (the LEVELUP sound) unless the levelling player is
 you, because the game already plays it for you. It also prints a coloured line in the

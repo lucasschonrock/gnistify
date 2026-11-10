@@ -15,6 +15,9 @@ local ns = select(2, ...)       -- shared with Kills.lua
 local PREFIX = "GnistDing"      -- NEVER change: older versions listen on this
 local DING_SOUND = 888          -- SOUNDKIT "LEVELUP" (the classic ding)
 local ROSTER_POLL = 10          -- seconds between roster refreshes (game throttles to ~10s)
+local QUIET_TIME = 20           -- seconds after a loading screen where roster/unit
+                                -- level changes are only recorded, not celebrated
+local MAX_JUMP = 2              -- a bigger level jump is stale data, not a ding
 
 local GUILD_MSG = "{star} DING! %s er dinget level %d! Længe leve gnisten! {star}"
 local LOCAL_MSG = "|cffffcc00DING!|r |cffff6600%s|r er dinget level |cffffff00%d|r! Længe leve gnisten!"
@@ -22,6 +25,16 @@ local LOCAL_MSG = "|cffffcc00DING!|r |cffff6600%s|r er dinget level |cffffff00%d
 local knownLevels = {}          -- name -> level from roster
 local announced = {}            -- name -> highest level already celebrated
 local rosterReady = false
+local quietUntil = math.huge    -- set on PLAYER_ENTERING_WORLD
+
+-- Right after login, /reload or a loading screen the guild roster and unit
+-- levels can arrive in pieces or with old cached levels. A level that "goes up"
+-- then is not a real ding, so only trust changes outside that window, and only
+-- small jumps. (Addon users' own DING: messages are always trusted.)
+local function LooksLikeDing(old, level)
+    return old and level and level > old and level - old <= MAX_JUMP
+        and GetTime() >= quietUntil
+end
 
 local function Short(name)
     if not name then return nil end
@@ -80,7 +93,7 @@ local function ScanRoster()
         local name = Short(fullName)
         if name and level and level > 0 then
             local old = knownLevels[name]
-            if rosterReady and old and level > old then
+            if rosterReady and LooksLikeDing(old, level) then
                 Celebrate(name, level)
             end
             knownLevels[name] = level
@@ -92,6 +105,7 @@ end
 local f = CreateFrame("Frame")
 f:RegisterEvent("ADDON_LOADED")
 f:RegisterEvent("PLAYER_LOGIN")
+f:RegisterEvent("PLAYER_ENTERING_WORLD")
 f:RegisterEvent("PLAYER_LEVEL_UP")
 f:RegisterEvent("GUILD_ROSTER_UPDATE")
 f:RegisterEvent("CHAT_MSG_ADDON")
@@ -123,6 +137,10 @@ f:SetScript("OnEvent", function(_, event, ...)
             C_Timer.NewTicker(ROSTER_POLL, RequestRoster)
         end
 
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        quietUntil = GetTime() + QUIET_TIME
+        RequestRoster()
+
     elseif event == "PLAYER_LEVEL_UP" then
         local level = ...
         local me = UnitName("player")
@@ -152,8 +170,10 @@ f:SetScript("OnEvent", function(_, event, ...)
             local name = Short(UnitName(unit))
             local level = UnitLevel(unit)
             local old = name and knownLevels[name]
-            if old and level and level > old then
+            if LooksLikeDing(old, level) then
                 Celebrate(name, level)
+            elseif name and level and level > 0 then
+                knownLevels[name] = math.max(old or 0, level)
             end
         end
 
