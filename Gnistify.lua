@@ -36,8 +36,17 @@ local function LooksLikeDing(old, level)
         and GetTime() >= quietUntil
 end
 
+-- WoW Forever runs the modern retail client, where the API can hand out
+-- "secret" values that addon code may not compare or use as table keys.
+-- Readable turns those into nil.
+local function Readable(value)
+    if value ~= nil and issecretvalue and issecretvalue(value) then return nil end
+    return value
+end
+
 local function Short(name)
-    if not name then return nil end
+    name = Readable(name)
+    if type(name) ~= "string" or name == "" then return nil end
     if Ambiguate then return Ambiguate(name, "none") end
     return (name:gsub("%-.*$", ""))
 end
@@ -46,7 +55,18 @@ local function Print(msg)
     DEFAULT_CHAT_FRAME:AddMessage("|cffffcc00[Gnist]|r " .. msg)
 end
 
-ns.PREFIX, ns.Short, ns.Print = PREFIX, Short, Print
+local function SendAddon(msg)
+    local send = (C_ChatInfo and C_ChatInfo.SendAddonMessage) or SendAddonMessage
+    if send then pcall(send, PREFIX, msg, "GUILD") end
+end
+
+local function SendGuild(msg)
+    local send = (C_ChatInfo and C_ChatInfo.SendChatMessage) or SendChatMessage
+    if send then pcall(send, msg, "GUILD") end
+end
+
+ns.PREFIX, ns.Short, ns.Print, ns.Readable, ns.SendAddon =
+    PREFIX, Short, Print, Readable, SendAddon
 
 local function PlayDing()
     if GnistifyDB.sound then
@@ -91,7 +111,8 @@ local function ScanRoster()
     for i = 1, num do
         local fullName, _, _, level = GetGuildRosterInfo(i)
         local name = Short(fullName)
-        if name and level and level > 0 then
+        level = Readable(level)
+        if name and type(level) == "number" and level > 0 then
             local old = knownLevels[name]
             if rosterReady and LooksLikeDing(old, level) then
                 Celebrate(name, level)
@@ -103,14 +124,13 @@ local function ScanRoster()
 end
 
 local f = CreateFrame("Frame")
-f:RegisterEvent("ADDON_LOADED")
-f:RegisterEvent("PLAYER_LOGIN")
-f:RegisterEvent("PLAYER_ENTERING_WORLD")
-f:RegisterEvent("PLAYER_LEVEL_UP")
-f:RegisterEvent("GUILD_ROSTER_UPDATE")
-f:RegisterEvent("CHAT_MSG_ADDON")
-f:RegisterEvent("CHAT_MSG_GUILD")
-f:RegisterEvent("UNIT_LEVEL")
+for _, event in ipairs({
+    "ADDON_LOADED", "PLAYER_LOGIN", "PLAYER_ENTERING_WORLD", "PLAYER_LEVEL_UP",
+    "GUILD_ROSTER_UPDATE", "CHAT_MSG_ADDON", "CHAT_MSG_GUILD", "UNIT_LEVEL",
+    "ADDON_ACTION_BLOCKED", "ADDON_ACTION_FORBIDDEN",
+}) do
+    pcall(f.RegisterEvent, f, event)   -- an unknown event must not break the rest
+end
 
 f:SetScript("OnEvent", function(_, event, ...)
     if event == "ADDON_LOADED" then
@@ -142,19 +162,19 @@ f:SetScript("OnEvent", function(_, event, ...)
         RequestRoster()
 
     elseif event == "PLAYER_LEVEL_UP" then
-        local level = ...
+        local level = tonumber(Readable((...))) or Readable(UnitLevel("player"))
         local me = UnitName("player")
+        if type(level) ~= "number" then return end
         Celebrate(me, level)
         if IsInGuild() then
-            local send = (C_ChatInfo and C_ChatInfo.SendAddonMessage) or SendAddonMessage
-            send(PREFIX, "DING:" .. level, "GUILD")
+            SendAddon("DING:" .. level)
             if GnistifyDB.guildChat then
-                SendChatMessage(GUILD_MSG:format(me, level), "GUILD")
+                SendGuild(GUILD_MSG:format(me, level))
             end
         end
 
     elseif event == "GUILD_ROSTER_UPDATE" then
-        local canRequest = ...
+        local canRequest = Readable((...))
         ScanRoster()
         if canRequest then RequestRoster() end   -- server says newer data exists
 
@@ -165,10 +185,10 @@ f:SetScript("OnEvent", function(_, event, ...)
     elseif event == "UNIT_LEVEL" then
         -- Instant for guildies we can "see": party/raid members, target, mouseover
         local unit = ...
-        if unit and unit ~= "player" and UnitIsPlayer(unit)
-           and UnitIsInMyGuild and UnitIsInMyGuild(unit) then
+        if unit and unit ~= "player" and Readable(UnitIsPlayer(unit))
+           and UnitIsInMyGuild and Readable(UnitIsInMyGuild(unit)) then
             local name = Short(UnitName(unit))
-            local level = UnitLevel(unit)
+            local level = Readable(UnitLevel(unit))
             local old = name and knownLevels[name]
             if LooksLikeDing(old, level) then
                 Celebrate(name, level)
@@ -179,10 +199,18 @@ f:SetScript("OnEvent", function(_, event, ...)
 
     elseif event == "CHAT_MSG_ADDON" then
         local prefix, msg, _, sender = ...
-        if prefix ~= PREFIX then return end
+        prefix, msg = Readable(prefix), Readable(msg)
+        if prefix ~= PREFIX or type(msg) ~= "string" then return end
         local level = msg:match("^DING:(%d+)$")
         if level and Short(sender) ~= UnitName("player") then
             Celebrate(sender, level)
+        end
+
+    elseif event == "ADDON_ACTION_BLOCKED" or event == "ADDON_ACTION_FORBIDDEN" then
+        -- Keep the name of anything the game refused us, so it can be fixed
+        local addon, fn = ...
+        if Readable(addon) == ADDON and GnistifyDB then
+            GnistifyDB.lastBlocked = event .. ": " .. tostring(Readable(fn)) .. " @ " .. date()
         end
     end
 end)

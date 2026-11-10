@@ -37,6 +37,8 @@ end
 
 local function Filter(_, _, msg, ...)
     if GnistifyDB and GnistifyDB.emojis == false then return false end
+    -- The modern client can hand us a "secret" message we may not read
+    if type(msg) ~= "string" or (issecretvalue and issecretvalue(msg)) then return false end
     local new = Replace(msg)
     if new ~= msg then return false, new, ... end
     return false
@@ -50,7 +52,8 @@ for _, event in ipairs({
     "CHAT_MSG_WHISPER", "CHAT_MSG_WHISPER_INFORM",
     "CHAT_MSG_CHANNEL",
 }) do
-    ChatFrame_AddMessageEventFilter(event, Filter)
+    local add = (ChatFrameUtil and ChatFrameUtil.AddMessageEventFilter) or ChatFrame_AddMessageEventFilter
+    if add then add(event, Filter) end
 end
 
 -- Used by "/gnist emojis"

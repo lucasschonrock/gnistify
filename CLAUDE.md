@@ -14,11 +14,24 @@ All text the players see is in **Danish**. Keep it that way.
 - The source lives in the git repo `~/Documents/GitHub/gnistify`. In-game it must sit
   at `Interface/AddOns/Gnistify` (capital G). File paths in the code, such as
   `Interface\AddOns\Gnistify\sound.mp3`, depend on that folder name.
-- The client uses the Classic Era API. The `.toc` lists `## Interface: 16001, 11509`, the
-  same as the other Forever addons in this install.
-- Available APIs: `C_GuildInfo.GuildRoster`, `C_ChatInfo.SendAddonMessage`, `C_Timer`,
-  `Ambiguate`, `UnitIsInMyGuild`, `ChatFrame_AddMessageEventFilter`. The code still
-  falls back to the older global functions where it's cheap to do so.
+- **Forever runs the modern retail client (interface 16001) on the Vanilla world.** The
+  `.toc` lists `## Interface: 16001, 11509`, the same as the other Forever addons in this
+  install. This has two big consequences:
+  - **The combat log is closed to addons.** Registering `COMBAT_LOG_EVENT_UNFILTERED`
+    is a forbidden action and shows the "Gnistify has been blocked from an action only
+    available to the Blizzard UI" popup at every login. Never use it or
+    `CombatLogGetCurrentEventInfo`. Use the `PARTY_KILL` event and unit tokens instead.
+  - **Values can be secret.** The API can return opaque values that addon code may not
+    compare, concatenate or use as table keys. Pass every API value through
+    `ns.Readable` (in `Gnistify.lua`), which turns a secret into nil.
+  - `Spy/Forever.lua` in the AddOns folder is a good reference for what works on Forever.
+- APIs used: `C_GuildInfo.GuildRoster`, `C_ChatInfo.SendAddonMessage`,
+  `C_ChatInfo.SendChatMessage`, `C_Timer`, `Ambiguate`, `UnitIsInMyGuild`,
+  `ChatFrameUtil.AddMessageEventFilter`. The code falls back to the older global
+  functions where it's cheap to do so, and registers events with `pcall`.
+- `ADDON_ACTION_BLOCKED` / `ADDON_ACTION_FORBIDDEN` aimed at Gnistify are saved in
+  `GnistifyDB.lastBlocked` (read it from `WTF/Account/*/SavedVariables/Gnistify.lua`
+  after the user logs out or reloads).
 - **Nothing can be tested from here.** There is no game client and no `luac` on the
   machine. Review changes by eye and tell the user to test them in-game.
 
@@ -79,14 +92,15 @@ The victim's name is shown in their class colour.
 
 - **Who announces:** only the client of the player who landed the killing blow. This
   stops duplicates when several guildies are grouped together. Detection uses the
-  combat log's `PARTY_KILL` event, where the source is the player or their pet and the
-  victim's GUID starts with `Player-`.
+  `PARTY_KILL` event (`attackerGUID, targetGUID`), where the attacker is the player or
+  their pet and the victim's GUID starts with `Player-`.
 - **What is sent:** the killer's client shows the line locally and sends
   `KILL;victim;level;classFile;zone` on the `GnistDing` prefix to `GUILD`. Receivers
   ignore their own echo.
-- **Victim level:** the combat log doesn't include it. Levels are cached per GUID from
-  the target, mouseover, nameplates and `UNIT_LEVEL`, so they're still known after the
-  nameplate disappears. Unknown is shown as `?`, and a skull-level player as `??`.
+- **Victim name, class and level:** `PARTY_KILL` only gives GUIDs. Name, class and
+  level are cached per GUID from the target, mouseover, focus, nameplates and
+  `UNIT_LEVEL`, so they're still known after the nameplate disappears.
+  `GetPlayerInfoByGUID` is the fallback for name and class. Unknown is shown as `?`, and a skull-level player as `??`.
 - **Class name:** comes from the client's `LOCALIZED_CLASS_NAMES_MALE`.
 - **Toggles:** `kills` turns off *showing* kills, and `killsSend` stops sending your
   own kills to the guild.
