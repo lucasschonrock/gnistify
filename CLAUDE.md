@@ -155,7 +155,7 @@ of WoW.
 - The CurseForge upload needs three things:
   - the repo secret `CF_API_KEY`;
   - `## X-Curse-Project-ID: <id>` in `Gnistify.toc`;
-  - optionally, the repo variable `CF_GAME_VERSION`, which defaults to `1.15.8`. It's
+  - optionally, the repo variable `CF_GAME_VERSION`, which defaults to `1.60.1` (the game version CurseForge lists for WoW Forever). It's
     needed because CurseForge doesn't know WoW Forever's interface number `16001`.
 - `sound.mp3` is the user's own file. CurseForge requires that the uploader owns, or has
   permission to use, every file.

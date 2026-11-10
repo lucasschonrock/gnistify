@@ -9,7 +9,7 @@
 #
 # Needs (GitHub repo -> Settings -> Secrets and variables -> Actions):
 #   Secret   CF_API_KEY       - CurseForge API token
-#   Variable CF_GAME_VERSION  - optional, Classic Era version on CurseForge (default 1.15.8)
+#   Variable CF_GAME_VERSION  - optional, CurseForge game version (default 1.60.1)
 # and "## X-Curse-Project-ID: <id>" in Gnistify.toc.
 
 name: Release
@@ -65,7 +65,7 @@ jobs:
         with:
           # WoW Forever's own interface number (16001) isn't a CurseForge game
           # version, so tell CurseForge which Classic Era version to list.
-          args: -g ${{ vars.CF_GAME_VERSION || '1.15.8' }}
+          args: -g ${{ vars.CF_GAME_VERSION || '1.60.1' }}
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
           GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
