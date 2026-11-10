@@ -17,7 +17,21 @@ local PREFIX = ns.PREFIX
 local Readable = ns.Readable
 
 local GNIST_ICON = "|TInterface\\AddOns\\Gnistify\\emojis\\gnist:0|t"
-local KILL_MSG = "%s |cffff6600%s|r gnistede %s (lvl %s %s) til døde i |cffffff00%s|r!"
+-- One of these is picked at random for every kill. {killer} is the one with
+-- the killing blow (plus "(med X og Y)" for group members nearby), {victim} is
+-- "Navn (lvl 34 Magiker)" and {zone} the zone.
+local KILL_MSGS = {
+    "{killer} gnistede {victim} til døde i {zone}!",
+    "{victim} blev gnistet ned af {killer} i {zone}!",
+    "{killer} sendte {victim} hjem til kirkegården fra {zone}!",
+    "{killer} slukkede lyset for {victim} i {zone}!",
+    "{killer} gjorde kort proces med {victim} i {zone}!",
+    "Puf! {victim} gik op i gnister. Skyldig: {killer} i {zone}!",
+    "{killer} lagde {victim} ned i {zone}. Længe leve gnisten!",
+    "{victim} mødte gnisten i {zone}. Gnisten hedder {killer}!",
+    "{killer} gav {victim} en gratis tur til spirit healeren i {zone}!",
+}
+local MAX_ASSISTS = 4   -- names shown in "(med ...)"; the rest becomes "+N"
 local KILL_SOUND = "Interface\\AddOns\\Gnistify\\sound.mp3"
 
 local seen = {}   -- enemy player GUID -> { level, name, class } while we could see them
@@ -63,13 +77,78 @@ local function ColoredName(name, classFile)
     return name
 end
 
-local function Show(killer, victim, level, classFile, zone)
+-- "Anna", "Anna og Bo", "Anna, Bo og Cille"
+local function JoinNames(names)
+    if #names <= 1 then return names[1] or "" end
+    return table.concat(names, ", ", 1, #names - 1) .. " og " .. names[#names]
+end
+
+-- assists: comma separated names (as sent), count: the killer's kills today
+local function Show(killer, victim, level, classFile, zone, assists, count)
     if not GnistifyDB or not GnistifyDB.kills then return end
-    DEFAULT_CHAT_FRAME:AddMessage(KILL_MSG:format(
-        GNIST_ICON, killer, ColoredName(victim, classFile), level, ClassText(classFile), zone))
+    local killerText = "|cffff6600" .. killer .. "|r"
+    local names = {}
+    for n in (assists or ""):gmatch("[^,]+") do names[#names + 1] = n end
+    if #names > 0 then
+        killerText = killerText .. " (med " .. JoinNames(names) .. ")"
+    end
+    local text = ns.Fill(ns.Pick(KILL_MSGS), {
+        killer = killerText,
+        victim = ColoredName(victim, classFile) .. " (lvl " .. level .. " " .. ClassText(classFile) .. ")",
+        zone = "|cffffff00" .. zone .. "|r",
+    })
+    count = tonumber(count)
+    if count then
+        text = text .. " |cffaaaaaa(" .. (count == 1 and "dagens første drab"
+            or "dagens drab nr. " .. count) .. ")|r"
+    end
+    DEFAULT_CHAT_FRAME:AddMessage(GNIST_ICON .. " " .. text)
     if GnistifyDB.killSound then
         PlaySoundFile(KILL_SOUND, "Master")
     end
+end
+
+-- My kills today, per character, kept across /reload and logout.
+local function CountKill(me)
+    GnistifyDB.killCount = GnistifyDB.killCount or {}
+    local today = date("%Y-%m-%d")
+    local c = GnistifyDB.killCount[me]
+    if not c or c.day ~= today then
+        c = { day = today, n = 0 }
+        GnistifyDB.killCount[me] = c
+    end
+    c.n = c.n + 1
+    return c.n
+end
+
+-- Group members close by when I got the killing blow. The combat log is closed
+-- on Forever, so we can't see who actually hit the victim: "in range" (about
+-- 40 yards) is the best guess, or "visible" when the range is hidden.
+local function Assists()
+    local names, extra = {}, 0
+    local raid = IsInRaid and IsInRaid()
+    local count = (GetNumGroupMembers and GetNumGroupMembers()) or 0
+    if count == 0 then return "" end
+    local prefix, last = raid and "raid" or "party", raid and count or math.min(count - 1, 4)
+    for i = 1, last do
+        local unit = prefix .. i
+        if Readable(UnitExists(unit)) and not Readable(UnitIsUnit(unit, "player"))
+           and Readable(UnitIsConnected(unit)) ~= false then
+            local inRange = Readable((UnitInRange(unit)))
+            local near = inRange
+            if inRange == nil then near = Readable(UnitIsVisible(unit)) end
+            local name = near and ns.FullName(unit)
+            if name then
+                if #names < MAX_ASSISTS then
+                    names[#names + 1] = name
+                else
+                    extra = extra + 1
+                end
+            end
+        end
+    end
+    if extra > 0 then names[#names + 1] = "+" .. extra end
+    return table.concat(names, ",")
 end
 
 local function OnKillingBlow(guid)
@@ -92,11 +171,15 @@ local function OnKillingBlow(guid)
     local level = LevelText(info.level)
     local zone = Readable(GetRealZoneText()) or Readable(GetZoneText()) or "?"
     local me = ns.Me() or "?"
+    local count = CountKill(me)
+    local assists = Assists()
 
-    Show(me, victim, level, classFile, zone)   -- I see my own kill right away
+    -- I see my own kill (and hear the sound) right away
+    Show(me, victim, level, classFile, zone, assists, count)
     if IsInGuild() and GnistifyDB.killsSend then
-        -- ";" never appears in names or zone names
-        ns.SendAddon(table.concat({ "KILL", victim, level, classFile or "", zone }, ";"))
+        -- ";" and "," never appear in names or zone names. Fields 6 and 7 are
+        -- new; older versions only read the first five, so this stays compatible.
+        ns.SendAddon(table.concat({ "KILL", victim, level, classFile or "", zone, count, assists }, ";"))
     end
 end
 
@@ -127,9 +210,10 @@ f:SetScript("OnEvent", function(_, event, ...)
         if prefix ~= PREFIX or type(msg) ~= "string" or not msg:find("^KILL;") then return end
         local killer = ns.Short(sender)
         if not killer or killer == ns.Me() then return end   -- already shown
-        local _, victim, level, classFile, zone = strsplit(";", msg)
+        local _, victim, level, classFile, zone, count, assists = strsplit(";", msg)
         if victim then
-            Show(killer, victim, level or "?", classFile ~= "" and classFile or nil, zone or "?")
+            Show(killer, victim, level or "?", classFile ~= "" and classFile or nil, zone or "?",
+                assists, count)
         end
 
     elseif event == "PLAYER_TARGET_CHANGED" then

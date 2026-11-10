@@ -19,8 +19,18 @@ local QUIET_TIME = 20           -- seconds after a loading screen where roster/u
                                 -- level changes are only recorded, not celebrated
 local MAX_JUMP = 2              -- a bigger level jump is stale data, not a ding
 
-local GUILD_MSG = "{star} DING! %s er dinget level %d! Længe leve gnisten! {star}"
-local LOCAL_MSG = "|cffffcc00DING!|r |cffff6600%s|r er dinget level |cffffff00%d|r! Længe leve gnisten!"
+-- One of these is picked at random for every ding. {name} and {level} are
+-- filled in. The guild chat post wraps it in {star} raid icons.
+local DING_MSGS = {
+    "DING! {name} er dinget level {level}! Længe leve gnisten!",
+    "DING DING! {name} har ramt level {level}! Længe leve gnisten!",
+    "{name} er nu level {level}! Gnisten brænder stærkere end nogensinde!",
+    "Level {level}! {name} gnistrer som aldrig før!",
+    "Skål for {name}, der lige er dinget level {level}!",
+    "DING! {name} er level {level}. Fjenderne skælver!",
+    "Gnisten vokser: {name} er nu level {level}!",
+    "Hold da op! {name} er dinget level {level}! Længe leve gnisten!",
+}
 
 local knownLevels = {}          -- name -> level from roster
 local announced = {}            -- name -> highest level already celebrated
@@ -73,6 +83,25 @@ end
 
 local function Me() return FullName("player") end
 
+local function Pick(templates) return templates[math.random(#templates)] end
+
+-- Fill in {key} placeholders from vars. color (optional) maps a key to a
+-- |cff colour code, for chat-frame output.
+local function Fill(text, vars, color)
+    return (text:gsub("{(%a+)}", function(key)
+        local v = vars[key]
+        if v == nil then return nil end
+        v = tostring(v)
+        if color and color[key] then v = "|cff" .. color[key] .. v .. "|r" end
+        return v
+    end))
+end
+
+local function DingText(template, name, level, colored)
+    return Fill(template, { name = name, level = level },
+        colored and { name = "ff6600", level = "ffff00" } or nil)
+end
+
 local function Print(msg)
     DEFAULT_CHAT_FRAME:AddMessage("|cffffcc00[Gnist]|r " .. msg)
 end
@@ -89,7 +118,7 @@ end
 
 ns.PREFIX, ns.Short, ns.Print, ns.Readable, ns.SendAddon =
     PREFIX, Short, Print, Readable, SendAddon
-ns.FullName, ns.Me, ns.IS_FOREVER = FullName, Me, IS_FOREVER
+ns.FullName, ns.Me, ns.IS_FOREVER, ns.Fill, ns.Pick = FullName, Me, IS_FOREVER, Fill, Pick
 
 local function PlayDing()
     if GnistifyDB.sound then
@@ -119,11 +148,10 @@ local function Celebrate(name, level)
     if name ~= Me() then
         PlayDing()               -- the game already dings for yourself
     end
-    Print(LOCAL_MSG:format(name, level))
+    local template = Pick(DING_MSGS)
+    Print(DingText(template, name, level, true))
     if RaidNotice_AddMessage and RaidWarningFrame and GnistifyDB.banner then
-        RaidNotice_AddMessage(RaidWarningFrame,
-            ("DING! %s er dinget level %d! Længe leve gnisten!"):format(name, level),
-            ChatTypeInfo["GUILD"])
+        RaidNotice_AddMessage(RaidWarningFrame, DingText(template, name, level), ChatTypeInfo["GUILD"])
     end
 end
 
@@ -192,7 +220,7 @@ f:SetScript("OnEvent", function(_, event, ...)
         if IsInGuild() then
             SendAddon("DING:" .. level)
             if GnistifyDB.guildChat then
-                SendGuild(GUILD_MSG:format(me, level))
+                SendGuild("{star} " .. DingText(Pick(DING_MSGS), me, level) .. " {star}")
             end
         end
 

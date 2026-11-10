@@ -62,8 +62,11 @@ celebrated (the `announced` table), so the same ding never shows twice.
    - sends `DING:<level>` on the hidden addon channel to `GUILD`, using prefix
      **`GnistDing`**;
    - posts one message to guild chat, if `GnistifyDB.guildChat` is on:
-     `{star} DING! <Navn> er dinget level <X>! Længe leve gnisten! {star}`.
+     `{star} <random DING_MSGS line> {star}`.
      `{star}` is WoW's built-in raid icon, so everyone sees it.
+   - The wording is picked at random from `DING_MSGS` (placeholders `{name}`,
+     `{level}`), so each client may show a different variant. The chat line and the
+     banner on one client use the same variant. `ns.Pick` and `ns.Fill` do this.
 
    Other clients get `CHAT_MSG_ADDON` and celebrate straight away.
 2. **Guildies without the addon:**
@@ -93,16 +96,25 @@ chat frame and shows a raid-warning style banner.
 
 Gnisterne is a PvP guild. When a member gets the **killing blow** on an enemy player,
 every Gnistify user sees this in their own chat window (not guild chat):
-`<gnist icon> Killer gnistede Offer (lvl 34 Magiker) til døde i Zone!`
-The victim's name is shown in their class colour.
+`<gnist icon> Killer (med Anna og Bo) gnistede Offer (lvl 34 Magiker) til døde i Zone! (dagens drab nr. 3)`
+The wording is picked at random from `KILL_MSGS` (placeholders `{killer}`, `{victim}`,
+`{zone}`). The victim's name is shown in their class colour. The killer also sees the
+line and hears the sound on their own screen.
 
 - **Who announces:** only the client of the player who landed the killing blow. This
   stops duplicates when several guildies are grouped together. Detection uses the
   `PARTY_KILL` event (`attackerGUID, targetGUID`), where the attacker is the player or
   their pet and the victim's GUID starts with `Player-`.
 - **What is sent:** the killer's client shows the line locally and sends
-  `KILL;victim;level;classFile;zone` on the `GnistDing` prefix to `GUILD`. Receivers
-  ignore their own echo.
+  `KILL;victim;level;classFile;zone;count;assists` on the `GnistDing` prefix to
+  `GUILD`. Receivers ignore their own echo. Fields 6 and 7 were added later; older
+  versions only read the first five. Only ever append new fields at the end.
+- **Kills today:** `count` is the killer's kills today, kept per character in
+  `GnistifyDB.killCount[name] = { day = "YYYY-MM-DD", n = N }`.
+- **Assists:** `assists` is a comma-separated list of group members near the killer
+  (`UnitInRange`, or `UnitIsVisible` when the range is hidden), at most 4 names plus
+  `+N`. It's shown as "(med Anna og Bo)". The combat log is closed on Forever, so we
+  can't see who actually damaged the victim; "nearby" is the best guess.
 - **Victim name, class and level:** `PARTY_KILL` only gives GUIDs. Name, class and
   level are cached per GUID from the target, mouseover, focus, nameplates and
   `UNIT_LEVEL`, so they're still known after the nameplate disappears.
@@ -142,8 +154,10 @@ guild's kills), `killSound` (play `sound.mp3` on a kill), `killsSend` (send my o
 ## Decisions the user has made
 
 - Only the `:gnist:` emoji. A larger set of built-in icons was removed on purpose.
-- The message wording is "er dinget level X! Længe leve gnisten!". Earlier versions
-  used "opsteget ... i Gnisthood" and then "i Gnistskab", and the user rejected both.
+- The ding and kill messages are picked at random from lists, at the user's request,
+  so they vary. The ding list keeps "er dinget level X! Længe leve gnisten!" as one
+  variant. The user rejected "opsteget ... i Gnisthood" and "i Gnistskab"; don't use
+  those.
 - The test commands (`/gnist test` and the secret `/dingdong test`) were removed on
   request. Don't add them back unless the user asks.
 - Dings should be detected as close to real time as possible.
