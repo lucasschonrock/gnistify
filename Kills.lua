@@ -30,7 +30,7 @@ local function Remember(unit)
     if type(guid) ~= "string" then return end
     local info = seen[guid] or {}
     info.level = Readable(UnitLevel(unit)) or info.level
-    info.name = Readable((UnitName(unit))) or info.name
+    info.name = ns.FullName(unit) or info.name
     info.class = Readable((select(2, UnitClass(unit)))) or info.class
     seen[guid] = info
 end
@@ -77,16 +77,21 @@ local function OnKillingBlow(guid)
     local info = seen[guid] or {}
     local name, classFile = info.name, info.class
     if not name or not classFile then
-        local ok, _, cls, _, _, _, n = pcall(GetPlayerInfoByGUID, guid)
+        local ok, _, cls, _, _, _, n, surname = pcall(GetPlayerInfoByGUID, guid)
         if ok then
-            name = name or Readable(n)
+            n, surname = Readable(n), Readable(surname)
+            -- On Forever the "realm" slot holds the surname
+            if ns.IS_FOREVER and type(n) == "string" and type(surname) == "string" and surname ~= "" then
+                n = n .. " " .. surname
+            end
+            name = name or n
             classFile = classFile or Readable(cls)
         end
     end
     local victim = (type(name) == "string" and name ~= "" and ns.Short(name)) or "?"
     local level = LevelText(info.level)
     local zone = Readable(GetRealZoneText()) or Readable(GetZoneText()) or "?"
-    local me = UnitName("player")
+    local me = ns.Me() or "?"
 
     Show(me, victim, level, classFile, zone)   -- I see my own kill right away
     if IsInGuild() and GnistifyDB.killsSend then
@@ -121,7 +126,7 @@ f:SetScript("OnEvent", function(_, event, ...)
         prefix, msg, sender = Readable(prefix), Readable(msg), Readable(sender)
         if prefix ~= PREFIX or type(msg) ~= "string" or not msg:find("^KILL;") then return end
         local killer = ns.Short(sender)
-        if not killer or killer == UnitName("player") then return end   -- already shown
+        if not killer or killer == ns.Me() then return end   -- already shown
         local _, victim, level, classFile, zone = strsplit(";", msg)
         if victim then
             Show(killer, victim, level or "?", classFile ~= "" and classFile or nil, zone or "?")

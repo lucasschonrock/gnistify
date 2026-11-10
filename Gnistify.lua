@@ -44,12 +44,34 @@ local function Readable(value)
     return value
 end
 
+-- Forever characters have a first name and a surname ("Torden Tim") and no
+-- realms. The client puts the surname where other versions put the realm:
+-- UnitName returns (first, surname), and chat/roster names are "First-Surname".
+local toc = select(4, GetBuildInfo()) or 0
+local IS_FOREVER = toc >= 16000 and toc < 20000
+
+-- A display name from a chat/roster name: "Torden-Tim" -> "Torden Tim" on
+-- Forever, "Name-Realm" -> "Name" elsewhere.
 local function Short(name)
     name = Readable(name)
     if type(name) ~= "string" or name == "" then return nil end
+    if IS_FOREVER then return (name:gsub("%-", " ")) end
     if Ambiguate then return Ambiguate(name, "none") end
     return (name:gsub("%-.*$", ""))
 end
+
+-- A unit's full display name, with the surname on Forever.
+local function FullName(unit)
+    local first, second = UnitName(unit)
+    first, second = Readable(first), Readable(second)
+    if type(first) ~= "string" or first == "" then return nil end
+    if IS_FOREVER and type(second) == "string" and second ~= "" then
+        return first .. " " .. second
+    end
+    return first
+end
+
+local function Me() return FullName("player") end
 
 local function Print(msg)
     DEFAULT_CHAT_FRAME:AddMessage("|cffffcc00[Gnist]|r " .. msg)
@@ -67,6 +89,7 @@ end
 
 ns.PREFIX, ns.Short, ns.Print, ns.Readable, ns.SendAddon =
     PREFIX, Short, Print, Readable, SendAddon
+ns.FullName, ns.Me, ns.IS_FOREVER = FullName, Me, IS_FOREVER
 
 local function PlayDing()
     if GnistifyDB.sound then
@@ -93,7 +116,7 @@ local function Celebrate(name, level)
     knownLevels[name] = math.max(knownLevels[name] or 0, level)
     if not GnistifyDB.dings then return end
 
-    if name ~= UnitName("player") then
+    if name ~= Me() then
         PlayDing()               -- the game already dings for yourself
     end
     Print(LOCAL_MSG:format(name, level))
@@ -163,7 +186,7 @@ f:SetScript("OnEvent", function(_, event, ...)
 
     elseif event == "PLAYER_LEVEL_UP" then
         local level = tonumber(Readable((...))) or Readable(UnitLevel("player"))
-        local me = UnitName("player")
+        local me = Me()
         if type(level) ~= "number" then return end
         Celebrate(me, level)
         if IsInGuild() then
@@ -187,7 +210,7 @@ f:SetScript("OnEvent", function(_, event, ...)
         local unit = ...
         if unit and unit ~= "player" and Readable(UnitIsPlayer(unit))
            and UnitIsInMyGuild and Readable(UnitIsInMyGuild(unit)) then
-            local name = Short(UnitName(unit))
+            local name = FullName(unit)
             local level = Readable(UnitLevel(unit))
             local old = name and knownLevels[name]
             if LooksLikeDing(old, level) then
@@ -202,7 +225,7 @@ f:SetScript("OnEvent", function(_, event, ...)
         prefix, msg = Readable(prefix), Readable(msg)
         if prefix ~= PREFIX or type(msg) ~= "string" then return end
         local level = msg:match("^DING:(%d+)$")
-        if level and Short(sender) ~= UnitName("player") then
+        if level and Short(sender) ~= Me() then
             Celebrate(sender, level)
         end
 

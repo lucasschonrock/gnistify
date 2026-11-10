@@ -24,6 +24,12 @@ All text the players see is in **Danish**. Keep it that way.
   - **Values can be secret.** The API can return opaque values that addon code may not
     compare, concatenate or use as table keys. Pass every API value through
     `ns.Readable` (in `Gnistify.lua`), which turns a secret into nil.
+  - **Names have a surname and there are no realms** ("Torden Tim"). The client puts the
+    surname where other versions put the realm: `UnitName` returns `first, surname`,
+    `GetPlayerInfoByGUID` returns it as the realm, and chat/roster/addon senders are
+    `"First-Surname"`. Always use `ns.FullName(unit)`, `ns.Me()` and `ns.Short(name)`,
+    which turn these into `"First Surname"`. Never use `Ambiguate`, which would cut
+    the surname off.
   - `Spy/Forever.lua` in the AddOns folder is a good reference for what works on Forever.
 - APIs used: `C_GuildInfo.GuildRoster`, `C_ChatInfo.SendAddonMessage`,
   `C_ChatInfo.SendChatMessage`, `C_Timer`, `Ambiguate`, `UnitIsInMyGuild`,
