@@ -194,6 +194,7 @@ f:SetScript("OnEvent", function(_, event, ...)
         if db.kills == nil then db.kills = true end
         if db.killsSend == nil then db.killsSend = true end
         if db.killSound == nil then db.killSound = true end
+        if db.killBanner == nil then db.killBanner = true end
         if db.dings == nil then db.dings = true end
         if db.emojis == nil then db.emojis = true end
         if C_ChatInfo and C_ChatInfo.RegisterAddonMessagePrefix then

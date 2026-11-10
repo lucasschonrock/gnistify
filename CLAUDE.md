@@ -129,7 +129,7 @@ line and hears the sound on their own screen.
 
 Settings are stored in the `GnistifyDB` saved variable, and all of them default to on:
 `dings` (show guild dings at all), `sound`, `banner`, `guildChat`, `kills` (show the
-guild's kills), `killSound` (play `sound.mp3` on a kill), `killsSend` (send my own kills to the guild), `emojis`.
+guild's kills), `killSound` (play `sound.mp3` on a kill), `killBanner` (show kills as a raid-warning banner too), `killsSend` (send my own kills to the guild), `emojis`.
 
 | Command | Effect |
 |---|---|

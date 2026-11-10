@@ -103,6 +103,10 @@ local function Show(killer, victim, level, classFile, zone, assists, count)
             or "dagens drab nr. " .. count) .. ")|r"
     end
     DEFAULT_CHAT_FRAME:AddMessage(GNIST_ICON .. " " .. text)
+    -- The same line as a raid-warning style banner, like dings (can be turned off)
+    if GnistifyDB.killBanner and RaidNotice_AddMessage and RaidWarningFrame then
+        RaidNotice_AddMessage(RaidWarningFrame, GNIST_ICON .. " " .. text, ChatTypeInfo["GUILD"])
+    end
     if GnistifyDB.killSound then
         PlaySoundFile(KILL_SOUND, "Master")
     end

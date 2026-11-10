@@ -13,6 +13,7 @@ local OPTIONS = {
     { header = "PvP" },
     { key = "kills",     label = "Vis guildens drab i chatten" },
     { key = "killSound", label = "Spil lyd ved drab" },
+    { key = "killBanner", label = "Stor tekst midt på skærmen ved drab" },
     { key = "killsSend", label = "Del mine drab med guilden" },
     { header = "Chat" },
     { key = "emojis",    label = "Vis :gnist: emoji i chatten" },
@@ -51,7 +52,7 @@ end
 
 -- Stand-alone window -----------------------------------------------------
 local win = CreateFrame("Frame", "GnistifyOptionsFrame", UIParent, "BasicFrameTemplateWithInset")
-win:SetSize(300, 356)
+win:SetSize(300, 382)
 win:SetPoint("CENTER")
 win:SetFrameStrata("DIALOG")
 win:SetMovable(true)
