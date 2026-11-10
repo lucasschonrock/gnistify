@@ -1,0 +1,8 @@
+# Read by the BigWigs packager (used by CurseForge and our GitHub Action).
+# The folder inside the zip must be "Gnistify" (capital G) - file paths in
+# the code depend on it.
+package-as: Gnistify
+
+ignore:
+  - CLAUDE.md
+  - README.md

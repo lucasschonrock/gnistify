@@ -1,0 +1,34 @@
+# Builds Gnistify.zip and uploads it to CurseForge + GitHub Releases
+# whenever a version tag (e.g. v1.0.0) is pushed.
+#
+# Needs (GitHub repo -> Settings -> Secrets and variables -> Actions):
+#   Secret   CF_API_KEY       - CurseForge API token (curseforge.com/account/api-tokens)
+#   Variable CF_GAME_VERSION  - optional, Classic Era version on CurseForge (default 1.15.8)
+# and "## X-Curse-Project-ID: <id>" in Gnistify.toc.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write   # lets the packager create the GitHub release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # packager needs the tag history for the changelog
+
+      - uses: BigWigsMods/packager@v2
+        with:
+          # WoW Forever's own interface number (16001) isn't a CurseForge game
+          # version, so tell CurseForge which Classic Era version to list.
+          args: -g ${{ vars.CF_GAME_VERSION || '1.15.8' }}
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
