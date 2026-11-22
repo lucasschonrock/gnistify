@@ -33,6 +33,8 @@ local OPTIONS = {
     { key = "fishingSplash", label = "Højere plask når jeg fisker" },
     { header = "Streaks" },
     { key = "streaks",       label = "Fejr dage i træk (streaks)" },
+    { header = "Professioner" },
+    { key = "profShare",  label = "Del mine professioner med guilden" },
     { header = "Battleground (leder)" },
     { key = "callerFrame",  label = "Vis leder-vinduet i BG og dungeons" },
     { key = "callerFollow", label = "Følg leder valgt af andre" },

@@ -15,5 +15,6 @@ Minimap.lua
 Elite.lua
 Fishing.lua
 Streaks.lua
+Professions.lua
 Caller.lua
 Options.lua

@@ -224,6 +224,7 @@ f:SetScript("OnEvent", function(_, event, ...)
         if db.fishingSend == nil then db.fishingSend = true end
         if db.fishingSplash == nil then db.fishingSplash = true end
         if db.streaks == nil then db.streaks = true end
+        if db.profShare == nil then db.profShare = true end
         if C_ChatInfo and C_ChatInfo.RegisterAddonMessagePrefix then
             C_ChatInfo.RegisterAddonMessagePrefix(PREFIX)
         elseif RegisterAddonMessagePrefix then
@@ -334,6 +335,8 @@ SlashCmdList.GNISTIFY = function(input)
         ns.FishingCommand()
     elseif cmd == "streak" or cmd == "dage" then
         ns.StreakCommand()
+    elseif cmd == "prof" or cmd == "professioner" or cmd == "professions" then
+        ns.ProfCommand(rest)
     elseif cmd == "leder" or cmd == "caller" then
         ns.CallerCommand(rest)
     elseif cmd == "makro" or cmd == "macro" then
@@ -353,6 +356,7 @@ SlashCmdList.GNISTIFY = function(input)
         Print("  /gnist reset  - foreslå at nulstille PvP-tavlen (kræver 4 ja)")
         Print("  /gnist ja     - stem ja til at nulstille PvP-tavlen")
         Print("  /gnist fisk   - vis dagens fangst i guilden")
+        Print("  /gnist prof   - vis hvem i guilden der har en profession (fx /gnist prof alch)")
         Print("  /gnist emojis - vis alle :emojis: du kan skrive i chatten")
         Print("  /gnist streak - vis din streak (dage i træk)")
         Print("  /gnist leder  - vælg dit mål som leder (eller åbn leder-vinduet)")

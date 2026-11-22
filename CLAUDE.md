@@ -55,6 +55,7 @@ All text the players see is in **Danish**. Keep it that way.
 | `Elite.lua` | The classic elite dragon around PvP leaders' portraits (player, party, target frames): gold elite for Gnistkejseren (the user wants the emperor to look strongest), silver winged rare-elite for #1 this month, silver rare for #1 today/week (`ns.EliteKind`). Rare-elite falls back to gold if the client lacks it. Texture coords and placement copied from Leatrix Plus' player chain. Setting `eliteFrames`. |
 | `Fishing.lua` | Fishing catches, fishing skill dings, fish today and the louder splash (see below). |
 | `Streaks.lua` | Login streaks (see below). |
+| `Professions.lua` | Shares my professions and skill levels with the guild and answers `/gnist prof` (see below). |
 | `Caller.lua` | Battleground shot caller ("leder") and the assist button (see below). |
 | `Bindings.xml` | Key binding "Mål lederens mål" (`CLICK GnistAssistButton:LeftButton`). Loaded by the client from the addon folder; **not** listed in the `.toc`. |
 | `dexter.mp3`, `fire.mp3` | Title sounds for the PvP leaderboard (quieter copies; originals in `art/sounds/`). |
@@ -253,6 +254,38 @@ Counts consecutive days each character logs in; setting `streaks` (default on).
   echo; `streaks` off hides everyone's and stops announcing mine.
 - `/gnist streak` (`dage`) prints my current and best streak.
 
+## Professions (`Professions.lua`)
+
+Lets the guild look up who has which profession. Setting `profShare` (share mine; looking
+up others always works). **Profession names are English on purpose** (the user wants it),
+in commands and output; the surrounding text is Danish.
+
+- **Reading mine:** `GetProfessions()` + `GetProfessionInfo(i)` (retail) and
+  `GetNumSkillLines()` + `GetSkillLineInfo(i)` (classic) are both tried, in `pcall` and
+  through `ns.Readable`. Only the 12 names in `PROF_LIST` count (Alchemy, Blacksmithing,
+  Enchanting, Engineering, Herbalism, Leatherworking, Mining, Skinning, Tailoring, Cooking,
+  First Aid, Fishing). Collapsed skill headers are not expanded, so a classic skill list
+  may hide some; the retail API covers them.
+- **Message** on `GnistDing` to `GUILD`: `PROF;Alchemy=225/300;First Aid=1/75` (entries in
+  `PROF_LIST` order, cut off before 240 bytes) and `PROFREQ`. Receivers skip unknown names
+  and bad numbers (skill must be 1..max, max at most 700), so only append new entries.
+  Receivers ignore their own echo.
+- **When sent:** 10 sec after login, when `SKILL_LINES_CHANGED` / `CHAT_MSG_SKILL` fire
+  (at most once per 30 sec, and only if the text changed), and in reply to `PROFREQ`
+  (random 1-9 sec delay, at most once per 60 sec). A client with no other member in its
+  cache sends `PROFREQ` at login. With `profShare` off nothing is sent, but my own
+  professions are still stored.
+- **Data:** `GnistifyDB.profs[name] = { t = time(), Alchemy = { 225, 300 }, ... }`, account
+  wide, so offline members and my other characters show up. A new message replaces the
+  member's whole entry.
+- **`/gnist prof <profession>`** lists everyone known, best skill first, as
+  `Alchemy: Frosbe Echoshot 225/300, Bo Hansen 150/150 (3 dage gammel)` (age only when
+  over a day, at most 25 rows). The name is matched case-insensitively: aliases
+  (`alch`, `bs`, `ench`, `eng`, `herb`, `lw`, `skin`, `tailor`, `cook`, `fa`, `fish`, ...) or
+  a unique prefix; an ambiguous one ("e") answers "Mente du: ...". With no argument it lists
+  each profession with how many known members have it. Every run also sends `PROFREQ`
+  (at most once per 60 sec), so the next lookup is fresher.
+
 ## Shot caller (`Caller.lua`)
 
 For battlegrounds: the group picks one shot caller ("leder"), and everyone presses one
@@ -324,7 +357,7 @@ default to on:
 guild's kills), `killSound` (play `sound.mp3` on a kill), `killBanner` (show kills as a raid-warning banner too), `killsSend` (send my own kills to the guild), `minimapIcon` (the minimap button), `crownSound` (sound for a new leaderboard #1), `eliteFrames` (elite dragon on leaders' portraits), `emojis`, `callerFrame` (open the leader
 window by itself in BGs, arenas and dungeons), `callerFollow` (follow a caller picked by others), `callerSound`
 (ping when the caller changes target, default off), `fishing`, `fishingSound`, `fishingBanner`,
-`fishingSend`, `fishingSplash`, `streaks` (celebrate login streaks).
+`fishingSend`, `fishingSplash`, `streaks` (celebrate login streaks), `profShare` (share my professions).
 
 | Command | Effect |
 |---|---|
@@ -339,6 +372,7 @@ window by itself in BGs, arenas and dungeons), `callerFollow` (follow a caller p
 | `/gnist ja` | Vote yes to a reset (same as the popup's button) |
 | `/gnist fisk` | Show today's catch counts in the guild |
 | `/gnist streak` (or `dage`) | Show your current and best login streak |
+| `/gnist prof [profession]` | List guild members with a profession, best first (no argument: how many have each) |
 | `/gnist emojis` | List the available emojis |
 | `/gnist leder [navn\|mig\|ingen]` | Make your target (or the named member, yourself, nobody) the caller; with no target, open the leader window |
 | `/gnist makro` | Create the `GnistMål` macro and put it on the cursor |

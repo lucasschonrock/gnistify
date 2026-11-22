@@ -44,6 +44,14 @@ En WoW-addon til guilden **Gnisterne** på WoW Forever. Længe leve gnisten!
   med en besked i chatten, stort på skærmen og en lyd hos alle med addonen, og du skriver
   det også i guild chat. Det sker højst én gang om dagen. Slås til og fra i `/gnist`, og
   `/gnist streak` viser din streak og din rekord.
+- **Professioner:** addonen deler dine professioner og skill med guilden, så alle kan slå
+  op, hvem der kan hvad. `/gnist prof alchemy` viser fx *"Alchemy: Navn 225/300, Bo 150/150
+  (3 dage gammel)"*, bedste skill først. Navnene er de engelske (Alchemy, Blacksmithing,
+  Enchanting, Engineering, Herbalism, Leatherworking, Mining, Skinning, Tailoring, Cooking,
+  First Aid, Fishing), og du kan forkorte dem (`alch`, `bs`, `ench`, `eng`, `herb`, `lw`,
+  `skin`, `tailor`, `cook`, `fa`, `fish`). Også dem, der er offline, kan ses, med seneste
+  kendte skill. `/gnist prof` alene viser, hvor mange der har hver profession. Du kan slå
+  deling fra i `/gnist`.
 - **:gnist:** skriv `:gnist:` i chatten for at vise en lille gnist. Kun dem med addonen
   ser billedet.
 
@@ -63,6 +71,7 @@ En WoW-addon til guilden **Gnisterne** på WoW Forever. Længe leve gnisten!
 | `/gnist reset` | Foreslår at nulstille PvP-tavlen. Alle med Gnistify bliver spurgt, og ved 4 ja starter alle drab forfra |
 | `/gnist fisk` | Viser dagens fangst i guilden |
 | `/gnist streak` | Viser, hvor mange dage i træk du har logget ind, og din rekord |
+| `/gnist prof Alchemy` | Viser, hvem i guilden der har professionen, og deres skill (`/gnist prof` alene viser antal pr. profession) |
 | `/gnist hjælp` | Viser alle kommandoer |
 | `/gnist leder` | Gør dit target til leder, eller åbner leder-vinduet |
 | `/gnist leder Navn` / `mig` / `ingen` | Vælger en leder ved navn, dig selv, eller ingen |
