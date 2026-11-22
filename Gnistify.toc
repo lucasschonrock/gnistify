@@ -17,4 +17,5 @@ Fishing.lua
 Streaks.lua
 Professions.lua
 Caller.lua
+Zones.lua
 Options.lua

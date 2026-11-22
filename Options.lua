@@ -43,6 +43,8 @@ local OPTIONS = {
         { label = "Åbn leder-vindue", func = function() ns.OpenCallerWindow() end },
         { label = "Lav makro",        func = function() ns.MakeCallerMacro() end },
     } },
+    { header = "Guild" },
+    { key = "zonePresence", label = "Vis gnister i zonen når jeg skifter zone" },
     { header = "Chat" },
     { key = "emojis",    label = "Vis :gnist: emoji i chatten" },
 }

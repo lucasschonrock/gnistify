@@ -57,6 +57,7 @@ All text the players see is in **Danish**. Keep it that way.
 | `Streaks.lua` | Login streaks (see below). |
 | `Professions.lua` | Shares my professions and skill levels with the guild and answers `/gnist prof` (see below). |
 | `Caller.lua` | Battleground shot caller ("leder") and the assist button (see below). |
+| `Zones.lua` | Zone presence: one chat line with the online guildies in the zone you just entered (see below). Setting `zonePresence`. |
 | `Bindings.xml` | Key binding "Mål lederens mål" (`CLICK GnistAssistButton:LeftButton`). Loaded by the client from the addon folder; **not** listed in the `.toc`. |
 | `dexter.mp3`, `fire.mp3` | Title sounds for the PvP leaderboard (quieter copies; originals in `art/sounds/`). |
 | `sound.mp3` | The user's own ~1 sec sound, played via `PlaySoundFile` whenever a guild kill is shown (setting `killSound`). |
@@ -349,6 +350,26 @@ key to target the caller's target.
   `DEFAULT_OFF` in `Options.lua` if the default is off) and add an entry to `OPTIONS`. A new
   header makes a new subcategory.
 
+## Zone presence (`Zones.lua`)
+
+When you enter a new zone, one chat line lists the online guildies in the same zone:
+`3 gnister i Stranglethorn Vale: Bo Hansen (34), Tim (31), Mink Jageren (36)` (sorted by
+level, at most 15 names then "og N mere"). It reads the guild roster
+(`GetGuildRosterInfo`: name, level, zone, online), so it works for every guild member,
+with or without the addon; no addon messages. Me is excluded; nobody there = no line.
+
+- **Triggers:** `ZONE_CHANGED_NEW_AREA` and the first `PLAYER_ENTERING_WORLD` after
+  login. Not inside instances, battlegrounds or arenas (`IsInInstance` type other than
+  `none`). Zone is `GetRealZoneText()`; zones are compared trimmed and lower case with
+  the roster's zone (both English on this client).
+- **Roster:** no second poller. `Gnistify.lua` exports `ns.RequestRoster` and calls
+  `ns.ZoneRosterUpdate()` from `GUILD_ROSTER_UPDATE`. A zone change requests the roster
+  and prints on the next update, or after `WAIT` (3 sec) from cached data. `pending`
+  makes sure a zone change prints once.
+- **No spam:** the same zone is not announced again within `REPEAT_TIME` (120 sec).
+- **Commands:** `/gnist her` (`zone`) lists my zone now; `/gnist her <zone prefix>` lists
+  every matching zone; `/gnist zoner` counts online guildies per zone (most first).
+
 ## Settings and commands
 
 Settings are stored in the `GnistifyDB` saved variable, and all of them except `callerSound`
@@ -357,7 +378,7 @@ default to on:
 guild's kills), `killSound` (play `sound.mp3` on a kill), `killBanner` (show kills as a raid-warning banner too), `killsSend` (send my own kills to the guild), `minimapIcon` (the minimap button), `crownSound` (sound for a new leaderboard #1), `eliteFrames` (elite dragon on leaders' portraits), `emojis`, `callerFrame` (open the leader
 window by itself in BGs, arenas and dungeons), `callerFollow` (follow a caller picked by others), `callerSound`
 (ping when the caller changes target, default off), `fishing`, `fishingSound`, `fishingBanner`,
-`fishingSend`, `fishingSplash`, `streaks` (celebrate login streaks), `profShare` (share my professions).
+`fishingSend`, `fishingSplash`, `streaks` (celebrate login streaks), `profShare` (share my professions), `zonePresence` (list guildies in the zone I enter).
 
 | Command | Effect |
 |---|---|
@@ -373,6 +394,8 @@ window by itself in BGs, arenas and dungeons), `callerFollow` (follow a caller p
 | `/gnist fisk` | Show today's catch counts in the guild |
 | `/gnist streak` (or `dage`) | Show your current and best login streak |
 | `/gnist prof [profession]` | List guild members with a profession, best first (no argument: how many have each) |
+| `/gnist her [zone]` (`zone`) | List online guildies in my zone, or in zones starting with the given text |
+| `/gnist zoner` | Count of online guildies per zone |
 | `/gnist emojis` | List the available emojis |
 | `/gnist leder [navn\|mig\|ingen]` | Make your target (or the named member, yourself, nobody) the caller; with no target, open the leader window |
 | `/gnist makro` | Create the `GnistMål` macro and put it on the cursor |
