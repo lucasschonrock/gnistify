@@ -52,7 +52,7 @@ All text the players see is in **Danish**. Keep it that way.
 | `Kills.lua` | PvP killing-blow announcements (see below). Shares `ns.PREFIX`, `ns.Short` and `ns.Print` from `Gnistify.lua` through the addon namespace. |
 | `Leaderboard.lua` | World PvP leaderboard ("PvP-tavle") and its sync (see below). |
 | `Duels.lua` | Guild-vs-guild duel detection, chat comments and `DUEL;` sync; the totals live in the PvP leaderboard (see below). |
-| `Minimap.lua` | Minimap button (hand-made, no LibDBIcon): left click PvP-tavle, right click settings, shift-click or middle click toggles `tracking`, drag to move (`GnistifyDB.minimapAngle`). Tooltip lists title holders (`ns.TitleHolders`). Setting `minimapIcon`. |
+| `Minimap.lua` | Minimap button (hand-made, no LibDBIcon) with the emblem `icon.tga`: left click PvP-tavle, right click settings, shift-click or middle click toggles `tracking`, drag to move (`GnistifyDB.minimapAngle`). Tooltip lists title holders (`ns.TitleHolders`). Setting `minimapIcon`. |
 | `Elite.lua` | The classic elite dragon around PvP leaders' portraits (player, party, target frames): gold elite for Gnistkejseren (the user wants the emperor to look strongest), silver winged rare-elite for #1 this month, silver rare for #1 today/week (`ns.EliteKind`). Rare-elite falls back to gold if the client lacks it. Texture coords and placement copied from Leatrix Plus' player chain. Setting `eliteFrames`. |
 | `Fishing.lua` | Fishing catches, fishing skill dings, fish today and the louder splash (see below). |
 | `Streaks.lua` | Login streaks (see below). |
@@ -66,6 +66,7 @@ All text the players see is in **Danish**. Keep it that way.
 | `dexter.mp3`, `fire.mp3` | Title sounds for the PvP leaderboard (quieter copies; originals in `art/sounds/`). |
 | `sound.mp3` | The user's own ~1 sec sound, played via `PlaySoundFile` whenever a guild kill is shown (setting `killSound`). |
 | `emojis/gnist.tga` | 64×64 32-bit uncompressed TGA spark (yellow/orange, drawn with a small Python script). |
+| `icon.tga` | 128×128 32-bit uncompressed TGA of the round emblem (source `art/emblem.webp`). Used for the minimap button (`SetTexCoord` trims the spike tips), `## IconTexture` in the `.toc` (addon list) and the settings window titles. Chat lines (kills, duels, leaderboard, `:gnist:`) keep the small spark, since the emblem is mush at font size. Rebuild with `magick art/emblem.webp -filter Lanczos -resize 128x128 -unsharp 0x0.6 -define tga:image-origin=TopLeft -type TrueColorAlpha -depth 8 -compress None icon.tga`. |
 
 ## How ding detection works (`Gnistify.lua`)
 

@@ -63,7 +63,9 @@ local function Create()
     local icon = button:CreateTexture(nil, "ARTWORK")
     icon:SetSize(20, 20)
     icon:SetPoint("CENTER")
-    icon:SetTexture("Interface\\AddOns\\Gnistify\\emojis\\gnist")
+    icon:SetTexture("Interface\\AddOns\\Gnistify\\icon")
+    -- Trim the tips of the four gold spikes so the round emblem fills the button.
+    icon:SetTexCoord(0.06, 0.94, 0.06, 0.94)
 
     local border = button:CreateTexture(nil, "OVERLAY")
     border:SetSize(53, 53)

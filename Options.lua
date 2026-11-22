@@ -6,7 +6,7 @@
 -- Gnistify.lua); both paths are built from it.
 
 local ns = select(2, ...)
-local GNIST_ICON = "|TInterface\\AddOns\\Gnistify\\emojis\\gnist:0|t"
+local GNIST_ICON = "|TInterface\\AddOns\\Gnistify\\icon:18|t"   -- the emblem (icon.tga)
 
 local OPTIONS = {
     { header = "Ding" },
