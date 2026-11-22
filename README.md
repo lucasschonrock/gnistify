@@ -33,6 +33,12 @@ En WoW-addon til guilden **Gnisterne** på WoW Forever. Længe leve gnisten!
   højreklikke og trække. Vinduet viser lederens mål og siger til, hvis du ikke har det samme, og
   der kan lyde et lille ping, når lederen skifter til en ny fjende (slås til i `/gnist`). Lederen kan kun
   skiftes uden for kamp (et valg i kamp virker, så snart kampen er slut).
+- **BG-kø sammen:** en BG-gruppe kan højst være 5, så flere ledere i guilden kan køre
+  en fælles nedtælling og trykke på kø-knappen samtidig. Skriv `/gnist kø`, og alle med
+  addonen får at vide, hvem der starter. Ledere (og dem uden gruppe) ser en stor
+  nedtælling midt på skærmen med en lyd hvert sekund og "KØ NU!" til sidst; alle i
+  guilden ser en linje i chatten. Addonen kan ikke trykke på knappen for dig, så det
+  gør du selv, når der står "KØ NU!". Slås til og fra i `/gnist`.
 - **Fiskeri:** når en fra guilden fanger noget særligt (grønt eller bedre, sjældne fisk
   som Old Ironjaw, eller en kiste), ser alle med addonen fx *"Bo halede [Old Ironjaw]
   op af vandet i Ironforge! (dagens fisk nr. 47)"*. Fiskeri-skill fejres for hver 25
@@ -60,6 +66,7 @@ En WoW-addon til guilden **Gnisterne** på WoW Forever. Længe leve gnisten!
 | `/gnist hjælp` | Viser alle kommandoer |
 | `/gnist leder` | Gør dit target til leder, eller åbner leder-vinduet |
 | `/gnist leder Navn` / `mig` / `ingen` | Vælger en leder ved navn, dig selv, eller ingen |
+| `/gnist kø` | Starter en 5 sekunders nedtælling for hele guilden, så lederne kan køre til BG samtidig |
 | `/gnist makro` | Laver makroen "GnistMål", som tager lederens mål |
 
 ## Ny version (for udviklere)

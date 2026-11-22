@@ -222,6 +222,7 @@ f:SetScript("OnEvent", function(_, event, ...)
         if db.fishingBanner == nil then db.fishingBanner = true end
         if db.fishingSend == nil then db.fishingSend = true end
         if db.fishingSplash == nil then db.fishingSplash = true end
+        if db.bgQueue == nil then db.bgQueue = true end
         if C_ChatInfo and C_ChatInfo.RegisterAddonMessagePrefix then
             C_ChatInfo.RegisterAddonMessagePrefix(PREFIX)
         elseif RegisterAddonMessagePrefix then
@@ -334,6 +335,8 @@ SlashCmdList.GNISTIFY = function(input)
         ns.CallerCommand(rest)
     elseif cmd == "makro" or cmd == "macro" then
         ns.MakeCallerMacro()
+    elseif cmd == "kø" or cmd == "ko" or cmd == "queue" then
+        ns.BGQueueCommand()
     elseif cmd == "emojis" or cmd == "emoji" then
         Gnistify_ListEmojis()
     elseif cmd == "" then
@@ -353,5 +356,6 @@ SlashCmdList.GNISTIFY = function(input)
         Print("  /gnist leder  - vælg dit mål som leder (eller åbn leder-vinduet)")
         Print("  /gnist leder <navn> / mig / ingen - vælg leder")
         Print("  /gnist makro  - lav en makro der tager lederens mål")
+        Print("  /gnist kø     - start nedtælling, så guilden køer til BG samtidig")
     end
 end

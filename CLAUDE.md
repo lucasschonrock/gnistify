@@ -55,6 +55,7 @@ All text the players see is in **Danish**. Keep it that way.
 | `Elite.lua` | The classic elite dragon around PvP leaders' portraits (player, party, target frames): gold elite for Gnistkejseren (the user wants the emperor to look strongest), silver winged rare-elite for #1 this month, silver rare for #1 today/week (`ns.EliteKind`). Rare-elite falls back to gold if the client lacks it. Texture coords and placement copied from Leatrix Plus' player chain. Setting `eliteFrames`. |
 | `Fishing.lua` | Fishing catches, fishing skill dings, fish today and the louder splash (see below). |
 | `Caller.lua` | Battleground shot caller ("leder") and the assist button (see below). |
+| `BGQueue.lua` | "BG queue together" synced countdown (see below). Setting `bgQueue`. |
 | `Bindings.xml` | Key binding "Mål lederens mål" (`CLICK GnistAssistButton:LeftButton`). Loaded by the client from the addon folder; **not** listed in the `.toc`. |
 | `dexter.mp3`, `fire.mp3` | Title sounds for the PvP leaderboard (quieter copies; originals in `art/sounds/`). |
 | `sound.mp3` | The user's own ~1 sec sound, played via `PlaySoundFile` whenever a guild kill is shown (setting `killSound`). |
@@ -272,6 +273,24 @@ key to target the caller's target.
   target. Plays `SOUNDKIT.MAP_PING` when the caller switches to a new enemy you don't
   have targeted (`callerSound`, at most every 1.5 sec).
 
+## BG queue together (`BGQueue.lua`)
+
+BG groups are capped at 5, so several group leaders want to queue in the same second.
+The addon **cannot** queue for anyone (`JoinBattlefield` is protected and needs a real
+click), so it only runs a synced countdown. It does not open the PvP frame either (not
+sure that is protected-call-free on Forever).
+
+- `/gnist kø` (`ko`, `queue`) sends `BGQ;endTime` on `GnistDing` to `GUILD`, with
+  `endTime = GetServerTime() + 5` (through `ns.Readable`). Server time, so every client
+  ends in the same second whatever the latency. The sender gets its own echo and shows
+  the countdown from that. Append fields only.
+- Receivers (setting `bgQueue`) ignore a message whose end time is passed or more than
+  30 sec away, and a second start from the same sender within 15 sec. Everyone prints
+  "{name} starter BG-kø om N sekunder." in chat. Only a group leader or an ungrouped
+  player (`UnitIsGroupLeader`) sees the big centered countdown (`GnistifyBGQueueFrame`,
+  a plain FontString frame, 0.1 sec ticker): a tick sound each second,
+  `READY_CHECK` at "KØ NU!", hidden 2.5 sec later.
+
 ## Settings and commands
 
 Settings are stored in the `GnistifyDB` saved variable, and all of them except `callerSound`
@@ -280,7 +299,7 @@ default to on:
 guild's kills), `killSound` (play `sound.mp3` on a kill), `killBanner` (show kills as a raid-warning banner too), `killsSend` (send my own kills to the guild), `minimapIcon` (the minimap button), `crownSound` (sound for a new leaderboard #1), `eliteFrames` (elite dragon on leaders' portraits), `emojis`, `callerFrame` (open the leader
 window by itself in BGs, arenas and dungeons), `callerFollow` (follow a caller picked by others), `callerSound`
 (ping when the caller changes target, default off), `fishing`, `fishingSound`, `fishingBanner`,
-`fishingSend`, `fishingSplash`.
+`fishingSend`, `fishingSplash`, `bgQueue` (show the BG queue countdown).
 
 | Command | Effect |
 |---|---|
@@ -296,6 +315,7 @@ window by itself in BGs, arenas and dungeons), `callerFollow` (follow a caller p
 | `/gnist fisk` | Show today's catch counts in the guild |
 | `/gnist emojis` | List the available emojis |
 | `/gnist leder [navn\|mig\|ingen]` | Make your target (or the named member, yourself, nobody) the caller; with no target, open the leader window |
+| `/gnist kø` | Start a 5 sec guild-wide BG queue countdown |
 | `/gnist makro` | Create the `GnistMål` macro and put it on the cursor |
 
 ## Emojis (`Emojis.lua`)

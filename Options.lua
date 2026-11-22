@@ -36,6 +36,7 @@ local OPTIONS = {
         { label = "Åbn leder-vindue", func = function() ns.OpenCallerWindow() end },
         { label = "Lav makro",        func = function() ns.MakeCallerMacro() end },
     } },
+    { key = "bgQueue",      label = "Vis BG-kø nedtælling (kun for ledere)" },
     { header = "Chat" },
     { key = "emojis",    label = "Vis :gnist: emoji i chatten" },
 }
@@ -88,7 +89,7 @@ end
 
 -- Stand-alone window -----------------------------------------------------
 local win = CreateFrame("Frame", "GnistifyOptionsFrame", UIParent, "BasicFrameTemplateWithInset")
-win:SetSize(300, 776)
+win:SetSize(300, 802)
 win:SetPoint("CENTER")
 win:SetFrameStrata("DIALOG")
 win:SetMovable(true)
