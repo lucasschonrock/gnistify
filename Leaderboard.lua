@@ -12,9 +12,11 @@
 --   [name] = { total = N, days = { [dayNumber] = kills } }
 -- Each player is the source of their own record; total only ever goes up, so it
 -- works as a version number: a record with a higher total always wins.
+-- Duel wins (Duels.lua) are kept in the same record as `duels` (a total that
+-- only goes up too; the higher one always wins) and are shown as a fifth list.
 --
 -- Sync (all on the GnistDing prefix, to GUILD; older versions ignore it):
---   LB;name;total;start;c1,c2,...;live
+--   LB;name;total;start;c1,c2,...;live;epoch;duels
 --       A record. start is the day number of the first count; the counts run
 --       up to the sender's today (empty = 0). live = 1 when sent right after
 --       the kill, which is when new title holders are announced.
@@ -43,6 +45,7 @@ local KEEP_DAYS = 40      -- day counts older than this are thrown away (total s
 local SEND_GAP = 1.1      -- seconds between queued records (the game throttles addon messages)
 local MIN_ROWS = 5        -- the window is never shorter than this many rows
 local MAX_ROWS = 25       -- names shown per list; the rest becomes "... og N mere"
+local DUEL_COL = { key = "duels", label = "Dueller", sub = "Vundne dueller", w = 170, titles = {} }
 
 local PERIODS = {
     { key = "today", label = "I dag",       titles = { "Dagens Gnistsprutter" } },
@@ -95,6 +98,7 @@ end
 
 local function Count(rec, key, today, weekStart, monthStart)
     if key == "all" then return rec.total or 0 end
+    if key == "duels" then return rec.duels or 0 end
     local from = key == "today" and today or key == "week" and weekStart or monthStart
     local n = 0
     for d, c in pairs(rec.days or {}) do
@@ -324,7 +328,10 @@ local function SendRecord(name, live)
     if name == ns.Me() and not GnistifyDB.killsSend then return end
     local msg = Encode(name)
     -- The epoch goes last: older versions read only the fields before it
-    if msg then ns.SendAddon(msg .. ";" .. (live and "1" or "0") .. ";" .. Epoch()) end
+    if msg then
+        ns.SendAddon(msg .. ";" .. (live and "1" or "0") .. ";" .. Epoch()
+            .. ";" .. (Board()[name].duels or 0))
+    end
 end
 
 local queue, queued, sending = {}, {}, false
@@ -366,8 +373,9 @@ end
 -- Receiving ----------------------------------------------------------------
 
 local function Receive(msg)
-    local _, name, total, start, counts, live, epoch = strsplit(";", msg)
+    local _, name, total, start, counts, live, epoch, duels = strsplit(";", msg)
     total, start, epoch = tonumber(total), tonumber(start), tonumber(epoch) or 0
+    duels = math.max(tonumber(duels) or 0, 0)
     if type(name) ~= "string" or name == "" or not total or not start or total < 0 then return end
     if epoch < Epoch() then
         SendResetNotice()          -- from before a reset: tell them, don't take it
@@ -378,8 +386,13 @@ local function Receive(msg)
     local board = Board()
     local rec = board[name]
     local have = rec and rec.total or -1
+    local haveDuels = rec and rec.duels or 0
     if have >= total then
-        if have > total then
+        if duels > haveDuels then   -- same or older kills, but more duel wins
+            rec.duels = duels
+            if Refresh then Refresh() end
+        end
+        if have > total or haveDuels > duels then
             Queue(name)           -- they have an older record: send ours
         else
             queued[name] = nil    -- someone else already sent the same one
@@ -394,8 +407,8 @@ local function Receive(msg)
         i = i + 1
         if i > 62 then break end
     end
-    board[name] = { total = total, days = days }
-    queued[name] = nil
+    board[name] = { total = total, days = days, duels = math.max(duels, haveDuels) }
+    if haveDuels > duels then Queue(name) else queued[name] = nil end
     if before then AnnounceCrowns(name, before) end
     if Refresh then Refresh() end
     if ns.RefreshElite then pcall(ns.RefreshElite) end
@@ -422,6 +435,20 @@ function ns.LeaderboardKill()
     SendRecord(me, true)
     if Refresh then Refresh() end
     if ns.RefreshElite then pcall(ns.RefreshElite) end
+end
+
+-- A duel won by a guild member (called by Duels.lua): the winner's duel total
+-- goes up. Every client counts each duel itself, so nothing is sent here; the
+-- total reaches those who missed it through the normal record sync.
+function ns.DuelWin(name)
+    local rec = Board()[name]
+    if not rec then
+        rec = { total = 0, days = {} }
+        Board()[name] = rec
+    end
+    rec.duels = (rec.duels or 0) + 1
+    if Refresh then Refresh() end
+    return rec.duels
 end
 
 -- Reset vote ---------------------------------------------------------------
@@ -530,13 +557,13 @@ local function ReceiveVote(msg, sender)
 end
 
 -- Window -------------------------------------------------------------------
--- Four lists side by side (today, week, month, all time). The window grows
+-- Five lists side by side (today, week, month, all time, duel wins). The window grows
 -- with the longest list, so the whole guild fits (up to MAX_ROWS each).
 
 local COL_W, ROW_H = 250, 18
 local TOP, LIST_TOP = -34, -78   -- header row, first name row (from the window top)
 local win = CreateFrame("Frame", "GnistifyPvPFrame", UIParent, "BasicFrameTemplateWithInset")
-win:SetWidth(COL_W * #PERIODS + 32)
+win:SetWidth(COL_W * #PERIODS + DUEL_COL.w + 32)
 win:SetPoint("CENTER")
 win:SetFrameStrata("DIALOG")
 win:SetMovable(true)
@@ -554,20 +581,21 @@ title:SetText(GNIST_ICON .. " |cffffcc00Gnisternes|r |cffff6600PvP-tavle|r")
 
 local footer = win:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
 footer:SetPoint("BOTTOM", 0, 12)
-footer:SetText("Kun killing blows i world PvP tæller (ikke BG og arena).")
+footer:SetText("Kun killing blows i world PvP tæller (ikke BG og arena). Dueller: kun guild mod guild.")
 
 local cells = {}
-for i, p in ipairs(PERIODS) do
+for i = 1, #PERIODS + 1 do
+    local p = PERIODS[i] or DUEL_COL      -- the duel list is the last one, a bit narrower
     local x = 16 + (i - 1) * COL_W
-    local c = { period = p, rows = {}, x = x }
+    local c = { period = p, rows = {}, x = x, w = p.w or COL_W }
     c.header = win:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     c.header:SetPoint("TOPLEFT", x + 4, TOP)
-    c.header:SetWidth(COL_W - 12)
+    c.header:SetWidth(c.w - 12)
     c.header:SetJustifyH("LEFT")
     c.header:SetText(p.label)
     c.sub = win:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
     c.sub:SetPoint("TOPLEFT", x + 4, TOP - 22)
-    c.sub:SetText("Titel: " .. p.titles[1])
+    c.sub:SetText(p.sub or ("Titel: " .. p.titles[1]))
     c.me = win:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
     cells[i] = c
 end
@@ -582,15 +610,15 @@ local function Row(c, r)
         row.bg = win:CreateTexture(nil, "BACKGROUND", nil, 1)
         row.bg:SetColorTexture(1, 1, 1, 0.04)
         row.bg:SetPoint("TOPLEFT", c.x, y + 2)
-        row.bg:SetSize(COL_W - 6, ROW_H)
+        row.bg:SetSize(c.w - 6, ROW_H)
     end
     row.name = win:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     row.name:SetPoint("TOPLEFT", c.x + 4, y)
-    row.name:SetWidth(COL_W - 50)
+    row.name:SetWidth(c.w - 50)
     row.name:SetJustifyH("LEFT")
     row.name:SetWordWrap(false)
     row.n = win:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    row.n:SetPoint("TOPRIGHT", win, "TOPLEFT", c.x + COL_W - 12, y)
+    row.n:SetPoint("TOPRIGHT", win, "TOPLEFT", c.x + c.w - 12, y)
     row.n:SetJustifyH("RIGHT")
     c.rows[r] = row
     return row
@@ -629,7 +657,7 @@ Refresh = function()
                 SetRow(Row(c, r), ("|cff%s%d.|r |cff%s%s|r%s"):format(MEDALS[rank] or "aaaaaa", rank,
                     color, e.name, t and (" |cffffcc00(" .. t .. ")|r") or ""), e.n)
             elseif r == 1 then
-                SetRow(Row(c, 1), "|cffaaaaaaIngen drab endnu|r", "")
+                SetRow(Row(c, 1), c.period == DUEL_COL and "|cffaaaaaaIngen dueller endnu|r" or "|cffaaaaaaIngen drab endnu|r", "")
             elseif c.rows[r] then
                 HideRow(c.rows[r])
             end
@@ -638,7 +666,8 @@ Refresh = function()
         local extra = {}
         if #list > shown then extra[#extra + 1] = ("... og %d mere"):format(#list - shown) end
         if myRank and myRank > shown then
-            extra[#extra + 1] = ("Dig: nr. %d med %d drab"):format(myRank, mine)
+            extra[#extra + 1] = ("Dig: nr. %d med %d %s"):format(myRank, mine,
+                c.period == DUEL_COL and "sejre" or "drab")
         end
         c.me:ClearAllPoints()
         c.me:SetPoint("TOPLEFT", c.x + 4, LIST_TOP - math.max(shown, 1) * ROW_H - 4)

@@ -51,6 +51,7 @@ All text the players see is in **Danish**. Keep it that way.
 | `Options.lua` | Settings UI (`/gnist`, minimap right click). Native: a "Gnistify" category in Options → AddOns with one subcategory per `{ header = ... }` in `OPTIONS` (see "Settings UI" below). Fallback for clients without the vertical-layout Settings API: the old hand-made window and canvas panel. |
 | `Kills.lua` | PvP killing-blow announcements (see below). Shares `ns.PREFIX`, `ns.Short` and `ns.Print` from `Gnistify.lua` through the addon namespace. |
 | `Leaderboard.lua` | World PvP leaderboard ("PvP-tavle") and its sync (see below). |
+| `Duels.lua` | Guild-vs-guild duel detection, chat comments and `DUEL;` sync; the totals live in the PvP leaderboard (see below). |
 | `Minimap.lua` | Minimap button (hand-made, no LibDBIcon): left click PvP-tavle, right click settings, drag to move (`GnistifyDB.minimapAngle`). Tooltip lists title holders (`ns.TitleHolders`). Setting `minimapIcon`. |
 | `Elite.lua` | The classic elite dragon around PvP leaders' portraits (player, party, target frames): gold elite for Gnistkejseren (the user wants the emperor to look strongest), silver winged rare-elite for #1 this month, silver rare for #1 today/week (`ns.EliteKind`). Rare-elite falls back to gold if the client lacks it. Texture coords and placement copied from Leatrix Plus' player chain. Setting `eliteFrames`. |
 | `Fishing.lua` | Fishing catches, fishing skill dings, fish today and the louder splash (see below). |
@@ -209,11 +210,39 @@ own damage meter shows I helped with a group member's kill.
   the kills made since the reset (otherwise my board stays too low). On `LBREQ`, clients with an epoch send `LBRESET` too, so friends
   who were offline wipe their copy at login. Versions without epochs never reset and
   are ignored once a reset has happened.
-- `/gnist top` (`tavle`, `pvp`) or the "Åbn PvP-tavle" button opens the window: four
+- `/gnist top` (`tavle`, `pvp`) or the "Åbn PvP-tavle" button opens the window: four kill
   lists side by side (the all-time one is headed "All-time største slambert", the
   user's wording). It shows every player (up to `MAX_ROWS`, then "... og N mere") and
   grows in height with the longest list. #1's title is in each header; only all-time
   #2/#3 show theirs after the name.
+
+## Duels (`Duels.lua`)
+
+Duels between two guild members are shown with a random Danish comment and counted as
+**duel wins** in the PvP leaderboard (a fifth list, "Dueller", in the `/gnist top` window).
+
+- **Detection:** `CHAT_MSG_SYSTEM`, matched against patterns built from the globals
+  `DUEL_WINNER_KNOCKOUT` (`%1$s has defeated %2$s in a duel`) and `DUEL_WINNER_RETREAT`
+  (`%2$s has fled from %1$s in a duel`; %1 is the winner, %2 the one who fled), with
+  English fallbacks. `BuildPattern` handles argument order. Names may be `First Surname`,
+  `First-Surname` or just a first name; `Resolve` maps them to a roster member (a first
+  name shared by two members is ignored). Both players must be guild members.
+- **Data:** only the winner's total, as `duels` in `GnistifyDB.pvpBoard[name]` (`ns.DuelWin`
+  in `Leaderboard.lua`; a record may have `total = 0` and only duels). No losses and no
+  head-to-head are kept.
+- **Sync and reset** are the leaderboard's: `LB;` records carry `duels` as the last field (after
+  the epoch; missing = 0). Like `total`, it only goes up and the higher value wins, so a
+  record with the same kills but more duels is taken, and one with fewer is answered with
+  ours. The reset vote wipes `pvpBoard`, so it wipes duel totals too.
+- **No double counting:** every client that sees the system message counts the duel itself
+  (`ns.DuelWin`). Only a participant sends it: the winner at once, the loser after 4 sec and only
+  if nobody has sent it by then (the winner may lack the addon). The same winner+loser is only
+  counted once per 20 sec (`DEDUPE_WINDOW`), so the system and addon message never both count.
+- **Message:** `DUEL;winner;loser;fled` on `GnistDing` to `GUILD` (`fled` 1 = the loser ran
+  away). Append fields only. Only the live duel is sent; offline friends catch up through the
+  `LB;` record sync.
+- **Display:** `DUEL_MSGS` / `FLED_MSGS` (`{winner}`, `{loser}`) plus the winner's duel-win total.
+  Setting `duels` turns off showing them; counting continues.
 
 ## Fishing (`Fishing.lua`)
 
@@ -398,7 +427,7 @@ default to on:
 guild's kills), `killSound` (play `sound.mp3` on a kill), `killBanner` (show kills as a raid-warning banner too), `killsSend` (send my own kills to the guild), `minimapIcon` (the minimap button), `crownSound` (sound for a new leaderboard #1), `eliteFrames` (elite dragon on leaders' portraits), `emojis`, `callerFrame` (open the leader
 window by itself in BGs, arenas and dungeons), `callerFollow` (follow a caller picked by others), `callerSound`
 (ping when the caller changes target, default off), `fishing`, `fishingSound`, `fishingBanner`,
-`fishingSend`, `fishingSplash`, `streaks` (celebrate login streaks), `profShare` (share my professions), `zonePresence` (list guildies in the zone I enter), `loot`, `lootSound`, `lootBanner`, `lootSend`.
+`fishingSend`, `fishingSplash`, `streaks` (celebrate login streaks), `profShare` (share my professions), `zonePresence` (list guildies in the zone I enter), `loot`, `lootSound`, `lootBanner`, `lootSend`, `duels` (show guild duels in chat).
 
 | Command | Effect |
 |---|---|
@@ -408,7 +437,7 @@ window by itself in BGs, arenas and dungeons), `callerFollow` (follow a caller p
 | `/gnist guild` | Toggle the guild chat post when you ding |
 | `/gnist banner` | Toggle the banner in the middle of the screen |
 | `/gnist drab` | Toggle showing the guild's PvP kills in chat |
-| `/gnist top` | Open the world PvP leaderboard |
+| `/gnist top` | Open the world PvP leaderboard (also lists duel wins) |
 | `/gnist reset` | Ask the guild to reset the PvP-tavle (popup for everyone, 4 yes needed) |
 | `/gnist ja` | Vote yes to a reset (same as the popup's button) |
 | `/gnist fisk` | Show today's catch counts in the guild |

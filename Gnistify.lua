@@ -220,6 +220,7 @@ f:SetScript("OnEvent", function(_, event, ...)
         if db.minimapIcon == nil then db.minimapIcon = true end
         if db.crownSound == nil then db.crownSound = true end
         if db.eliteFrames == nil then db.eliteFrames = true end
+        if db.duels == nil then db.duels = true end
         if db.fishing == nil then db.fishing = true end
         if db.fishingSound == nil then db.fishingSound = true end
         if db.fishingBanner == nil then db.fishingBanner = true end

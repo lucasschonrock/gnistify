@@ -23,6 +23,11 @@ En WoW-addon til guilden **Gnisterne** på WoW Forever. Længe leve gnisten!
   nr. 1 og sølv til dagens og ugens nr. 1. Den ses på dit eget portræt, i gruppen og når du har dem i target. Tavlen deles mellem alle med addonen, også med dem der var offline. Du kan
   også klikke på gnisten ved minimappet (højreklik åbner indstillingerne), og holder du
   musen over den, kan du se, hvem der har titlerne lige nu.
+- **Dueller:** når to fra guilden duellerer mod hinanden, står resultatet i chatten med
+  en fræk kommentar, fx *"Navn smadrede Navn i en duel!"*. Stikker en af, får han en
+  ekstra hård kommentar. Antal vundne dueller står i en ekstra kolonne, **Dueller**, i
+  PvP-tavlen (`/gnist top`). Kun dueller mellem to fra guilden tæller, og hver duel tælles
+  kun én gang. Beskeden kan slås fra i `/gnist`. Dueller nulstilles sammen med PvP-tavlen.
 - **Leder i BG:** vælg én i gruppen som leder (shot caller), og tryk én tast for at
   tage lederens mål. Vælg lederen i det lille **Leder**-vindue (knappen *Vælg*). Vinduet
   dukker selv op i BG og dungeons, og ellers åbner du det fra `/gnist` (*Åbn
@@ -78,6 +83,8 @@ En WoW-addon til guilden **Gnisterne** på WoW Forever. Længe leve gnisten!
 |---|---|
 | `/gnist` | Åbner indstillingerne (Indstillinger → AddOns → Gnistify), hvor du kan slå hver funktion til og fra |
 | `/gnist top` | Viser guildens PvP-tavle |
+| `/gnist` | Åbner indstillinger, hvor du kan slå hver funktion til og fra |
+| `/gnist top` | Viser guildens PvP-tavle (også med vundne dueller) |
 | `/gnist reset` | Foreslår at nulstille PvP-tavlen. Alle med Gnistify bliver spurgt, og ved 4 ja starter alle drab forfra |
 | `/gnist fisk` | Viser dagens fangst i guilden |
 | `/gnist streak` | Viser, hvor mange dage i træk du har logget ind, og din rekord |

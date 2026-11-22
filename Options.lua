@@ -21,6 +21,7 @@ local OPTIONS = {
     { key = "killsSend", label = "Del mine drab med guilden" },
     { key = "crownSound", label = "Spil lyd ved ny leder på PvP-tavlen" },
     { key = "eliteFrames", label = "Elite-drage om PvP-ledernes portræt" },
+    { key = "duels",     label = "Vis guildens dueller i chatten" },
     { buttons = {
         { label = "Åbn PvP-tavle", func = function() ns.ToggleLeaderboard() end },
     } },

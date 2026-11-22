@@ -11,6 +11,7 @@ Gnistify.lua
 Emojis.lua
 Kills.lua
 Leaderboard.lua
+Duels.lua
 Minimap.lua
 Elite.lua
 Fishing.lua
