@@ -226,12 +226,11 @@ end
 ns.KillLog = Log
 
 -- Helpers ---------------------------------------------------------------------
--- Everyone in my group who damaged the victim, or healed during the fight while
+-- Everyone in my group who damaged the victim, or healed someone who did while
 -- near the killer, gets the kill on the PvP-tavle too, not just the one with the
 -- killing blow. Forever's own damage meter (C_DamageMeter) knows who: its
 -- "enemy damage taken" list breaks each enemy's damage down per group member,
--- and "healing done" lists the healers (but not whom they healed, hence the
--- "near the killer" rule). The numbers are secret in combat and readable after.
+-- and "healing done" lists the healers, with whom they healed per spell. The numbers are secret in combat and readable after.
 --
 -- Credit: every client decides for itself. PARTY_KILL tells every group member
 -- about a kill, whoever made it (even without Gnistify). After combat my client
@@ -289,6 +288,35 @@ local function GetSource(id, dmType, guid, creature)
         dmType, guid, creature)
 end
 
+-- Did this healer heal someone else who hit the victim? The meter's per-healer
+-- view breaks the healing down per spell and per target (combatSpellDetails,
+-- like the damage view does per attacker). Unreadable counts as no: better no
+-- credit than credit for healing that had nothing to do with the kill.
+local function HealedDamager(id, src, damagers)
+    local healer = Field(src, "name")
+    healer = type(healer) == "string" and ns.Short(healer)
+    local okD, detail = GetSource(id, Enum.DamageMeterType.HealingDone,
+        Field(src, "sourceGUID"), Field(src, "sourceCreatureID"))
+    local spells = okD and Field(detail, "combatSpells")
+    if not Open(spells) then return false end
+    for _, sp in ipairs(spells) do
+        local amount = Field(sp, "totalAmount")
+        local d = Field(sp, "combatSpellDetails")
+        if type(amount) == "number" and amount > 0 and Open(d) then
+            local targets = Field(d, "unitName") ~= nil and { d } or d
+            for _, x in ipairs(targets) do
+                local target = Field(x, "unitName")
+                target = type(target) == "string" and target ~= "" and ns.Short(target)
+                if target and target ~= healer and not Field(x, "isPet")
+                   and damagers[target] then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
 -- Who hit this victim and who healed in the fight: { [name] = "d" / "h" / "dh" }.
 -- nil while the meter is still secret or doesn't know the victim.
 local function ReadHelpers(guid, id)
@@ -328,12 +356,19 @@ local function ReadHelpers(guid, id)
             end
         end
     end
+    -- Healing only counts when it landed on someone who hit the victim, and not
+    -- on the healer: a potion, bandage, Mend Pet or healing someone in another
+    -- fight is not helping with this kill.
+    local damagers = {}
+    for name in pairs(roles) do damagers[name] = true end
     local okH, heal = GetSession(id, T.HealingDone)
     local healers = okH and Field(heal, "combatSources")
     if Open(healers) then
         for _, src in ipairs(healers) do
             local amount = Field(src, "totalAmount")
-            if type(amount) == "number" and amount > 0 then Add(Field(src, "name"), "h") end
+            if type(amount) == "number" and amount > 0 and HealedDamager(id, src, damagers) then
+                Add(Field(src, "name"), "h")
+            end
         end
     end
     return roles

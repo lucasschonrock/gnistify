@@ -132,14 +132,18 @@ for the middle of the screen.
   readable after. Its `EnemyDamageTaken` list has one source per enemy (by GUID);
   `GetCombatSessionSourceFromType/FromID` for that enemy gives one `combatSpells` entry
   per group member who hit him (`totalAmount`, `combatSpellDetails.unitName`).
-  `HealingDone` lists the healers of the fight, but not whom they healed, so healing
-  only counts for a healer who was near the killer (`IsNear`: `UnitInRange`, or
-  `UnitIsVisible`). The fight's `sessionID` (public in combat) is noted at the kill and
+  `HealingDone` lists the healers of the fight; the source view per healer gives
+  their `combatSpells` with the healed targets in `combatSpellDetails.unitName`
+  (`HealedDamager`). Healing only counts when it landed on someone else (not the
+  healer, not a pet) who damaged the victim, so potions, bandages, Mend Pet and
+  healing in another fight give no credit. If that breakdown can't be read, healing
+  gives no credit. The healer must also be near the killer (`IsNear`:
+  `UnitInRange`, or `UnitIsVisible`). The fight's `sessionID` (public in combat) is noted at the kill and
   read after `PLAYER_REGEN_ENABLED` (up to 5 tries, 1 sec apart).
   - **Credit is self-decided:** `PARTY_KILL` reaches every group member, whoever made
     the kill (even without Gnistify). For a group member's kill, my client reads my own
     meter after combat and calls `ns.LeaderboardKill()` if I damaged the victim, or
-    healed while near the killer (`QueueMyHelp` / `CreditMe`).
+    healed someone who damaged the victim while near the killer (`QueueMyHelp` / `CreditMe`).
   - **Display:** the killer's client sends `HELP;victim;classFile;Name:d,Name:dh,...,+N`
     (d damage, h heal, n nearby only when the meter had nothing) and every client
     shows "Hjalp til med drabet på X: ...". `HELP` gives no credit (1.0.16 and older
