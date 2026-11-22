@@ -39,6 +39,11 @@ En WoW-addon til guilden **Gnisterne** på WoW Forever. Længe leve gnisten!
   point, og 75/150/225/300 fejres som et ding. 25, 50, 100 ... fisk på en dag bliver
   også meldt ud, og `/gnist fisk` viser dagens bedste fiskere. Mens du fisker, skrues
   der op for lydeffekter og ned for musik, så du nemt hører plasket.
+- **Streaks:** addonen tæller, hvor mange dage i træk hver af dine karakterer logger ind.
+  Ved 3, 7, 14, 30, 50, 100, 150, 200 og 365 dage (og derefter hver 100.) fejrer den det
+  med en besked i chatten, stort på skærmen og en lyd hos alle med addonen, og du skriver
+  det også i guild chat. Det sker højst én gang om dagen. Slås til og fra i `/gnist`, og
+  `/gnist streak` viser din streak og din rekord.
 - **:gnist:** skriv `:gnist:` i chatten for at vise en lille gnist. Kun dem med addonen
   ser billedet.
 
@@ -57,6 +62,7 @@ En WoW-addon til guilden **Gnisterne** på WoW Forever. Længe leve gnisten!
 | `/gnist top` | Viser guildens PvP-tavle |
 | `/gnist reset` | Foreslår at nulstille PvP-tavlen. Alle med Gnistify bliver spurgt, og ved 4 ja starter alle drab forfra |
 | `/gnist fisk` | Viser dagens fangst i guilden |
+| `/gnist streak` | Viser, hvor mange dage i træk du har logget ind, og din rekord |
 | `/gnist hjælp` | Viser alle kommandoer |
 | `/gnist leder` | Gør dit target til leder, eller åbner leder-vinduet |
 | `/gnist leder Navn` / `mig` / `ingen` | Vælger en leder ved navn, dig selv, eller ingen |

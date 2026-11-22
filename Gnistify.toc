@@ -14,5 +14,6 @@ Leaderboard.lua
 Minimap.lua
 Elite.lua
 Fishing.lua
+Streaks.lua
 Caller.lua
 Options.lua

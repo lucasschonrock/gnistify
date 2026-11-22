@@ -133,6 +133,7 @@ end
 ns.PREFIX, ns.Short, ns.Print, ns.Readable, ns.SendAddon =
     PREFIX, Short, Print, Readable, SendAddon
 ns.FullName, ns.Me, ns.IS_FOREVER, ns.Fill, ns.Pick = FullName, Me, IS_FOREVER, Fill, Pick
+ns.SendGuild = SendGuild
 
 local function PlayDing()
     if GnistifyDB.sound then
@@ -222,6 +223,7 @@ f:SetScript("OnEvent", function(_, event, ...)
         if db.fishingBanner == nil then db.fishingBanner = true end
         if db.fishingSend == nil then db.fishingSend = true end
         if db.fishingSplash == nil then db.fishingSplash = true end
+        if db.streaks == nil then db.streaks = true end
         if C_ChatInfo and C_ChatInfo.RegisterAddonMessagePrefix then
             C_ChatInfo.RegisterAddonMessagePrefix(PREFIX)
         elseif RegisterAddonMessagePrefix then
@@ -330,6 +332,8 @@ SlashCmdList.GNISTIFY = function(input)
         ns.ResetVoteYes()
     elseif cmd == "fisk" or cmd == "fishing" then
         ns.FishingCommand()
+    elseif cmd == "streak" or cmd == "dage" then
+        ns.StreakCommand()
     elseif cmd == "leder" or cmd == "caller" then
         ns.CallerCommand(rest)
     elseif cmd == "makro" or cmd == "macro" then
@@ -350,6 +354,7 @@ SlashCmdList.GNISTIFY = function(input)
         Print("  /gnist ja     - stem ja til at nulstille PvP-tavlen")
         Print("  /gnist fisk   - vis dagens fangst i guilden")
         Print("  /gnist emojis - vis alle :emojis: du kan skrive i chatten")
+        Print("  /gnist streak - vis din streak (dage i træk)")
         Print("  /gnist leder  - vælg dit mål som leder (eller åbn leder-vinduet)")
         Print("  /gnist leder <navn> / mig / ingen - vælg leder")
         Print("  /gnist makro  - lav en makro der tager lederens mål")

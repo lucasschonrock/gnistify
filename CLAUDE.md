@@ -54,6 +54,7 @@ All text the players see is in **Danish**. Keep it that way.
 | `Minimap.lua` | Minimap button (hand-made, no LibDBIcon): left click PvP-tavle, right click settings, drag to move (`GnistifyDB.minimapAngle`). Tooltip lists title holders (`ns.TitleHolders`). Setting `minimapIcon`. |
 | `Elite.lua` | The classic elite dragon around PvP leaders' portraits (player, party, target frames): gold elite for Gnistkejseren (the user wants the emperor to look strongest), silver winged rare-elite for #1 this month, silver rare for #1 today/week (`ns.EliteKind`). Rare-elite falls back to gold if the client lacks it. Texture coords and placement copied from Leatrix Plus' player chain. Setting `eliteFrames`. |
 | `Fishing.lua` | Fishing catches, fishing skill dings, fish today and the louder splash (see below). |
+| `Streaks.lua` | Login streaks (see below). |
 | `Caller.lua` | Battleground shot caller ("leder") and the assist button (see below). |
 | `Bindings.xml` | Key binding "Mål lederens mål" (`CLICK GnistAssistButton:LeftButton`). Loaded by the client from the addon folder; **not** listed in the `.toc`. |
 | `dexter.mp3`, `fire.mp3` | Title sounds for the PvP leaderboard (quieter copies; originals in `art/sounds/`). |
@@ -234,6 +235,24 @@ For the guild's anglers. Settings `fishing` (show), `fishingSound`, `fishingBann
   restored 10 sec after the last channel stop, on logout, at login (crash) and when the
   setting is turned off (`ns.RefreshFishing`).
 
+## Streaks (`Streaks.lua`)
+
+Counts consecutive days each character logs in; setting `streaks` (default on).
+
+- **Data:** `GnistifyDB.streakDays[name] = { last = "YYYY-MM-DD", count, best, ann }`, per
+  character (full name, `ns.Me()`), because `GnistifyDB` is account-wide. (Not
+  `GnistifyDB.streaks`, which is the on/off setting.) Local date. Yesterday is computed
+  via local noon of `day - 1`, so DST and month/year boundaries work.
+- **On login** (first `PLAYER_ENTERING_WORLD` of the session): same day = nothing,
+  `last == yesterday` = `count + 1`, else `count = 1`; `best` is updated.
+- **Milestones:** 3, 7, 14, 30, 50, 100, 150, 200, 365, then every 100. 10 sec after login
+  (`ANNOUNCE_DELAY`) the chat line, banner (`banner`), sound (`sound`), `STREAK;days`
+  addon message on `GnistDing` to `GUILD`, and (if `guildChat`) a guild chat line are
+  sent. Text from `STREAK_MSGS` (`{name}`, `{days}`). `ann` holds the day it was
+  announced, so it is at most once per day per character. Receivers ignore their own
+  echo; `streaks` off hides everyone's and stops announcing mine.
+- `/gnist streak` (`dage`) prints my current and best streak.
+
 ## Shot caller (`Caller.lua`)
 
 For battlegrounds: the group picks one shot caller ("leder"), and everyone presses one
@@ -305,7 +324,7 @@ default to on:
 guild's kills), `killSound` (play `sound.mp3` on a kill), `killBanner` (show kills as a raid-warning banner too), `killsSend` (send my own kills to the guild), `minimapIcon` (the minimap button), `crownSound` (sound for a new leaderboard #1), `eliteFrames` (elite dragon on leaders' portraits), `emojis`, `callerFrame` (open the leader
 window by itself in BGs, arenas and dungeons), `callerFollow` (follow a caller picked by others), `callerSound`
 (ping when the caller changes target, default off), `fishing`, `fishingSound`, `fishingBanner`,
-`fishingSend`, `fishingSplash`.
+`fishingSend`, `fishingSplash`, `streaks` (celebrate login streaks).
 
 | Command | Effect |
 |---|---|
@@ -319,6 +338,7 @@ window by itself in BGs, arenas and dungeons), `callerFollow` (follow a caller p
 | `/gnist reset` | Ask the guild to reset the PvP-tavle (popup for everyone, 4 yes needed) |
 | `/gnist ja` | Vote yes to a reset (same as the popup's button) |
 | `/gnist fisk` | Show today's catch counts in the guild |
+| `/gnist streak` (or `dage`) | Show your current and best login streak |
 | `/gnist emojis` | List the available emojis |
 | `/gnist leder [navn\|mig\|ingen]` | Make your target (or the named member, yourself, nobody) the caller; with no target, open the leader window |
 | `/gnist makro` | Create the `GnistMål` macro and put it on the cursor |
