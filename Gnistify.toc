@@ -16,6 +16,7 @@ Elite.lua
 Fishing.lua
 Streaks.lua
 Professions.lua
+Loot.lua
 Caller.lua
 Zones.lua
 Options.lua

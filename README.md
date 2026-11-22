@@ -57,6 +57,11 @@ En WoW-addon til guilden **Gnisterne** på WoW Forever. Længe leve gnisten!
   Bo Hansen (34), Tim (31), Mink Jageren (36)"*. Virker for alle i guilden, også dem uden
   addonen. Ingen besked i dungeons og battlegrounds, eller hvis du lige har været i zonen.
   Kan slås fra i `/gnist`.
+- **Episk loot:** når en fra guilden looter noget episk (lilla) eller legendarisk
+  (orange), ser alle med addonen fx *"Gnisten lyser lilla! Navn har fået fingrene i
+  [Item]!"* i chatten, og der spilles en lyd. Teksten skifter fra gang til gang, og
+  legendariske ting får ekstra meget begejstring. Håndlavede ting og ting købt hos
+  en vendor tæller ikke. Alt kan slås til og fra i `/gnist`.
 - **:gnist:** skriv `:gnist:` i chatten for at vise en lille gnist. Kun dem med addonen
   ser billedet.
 

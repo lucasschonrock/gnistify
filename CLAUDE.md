@@ -56,6 +56,7 @@ All text the players see is in **Danish**. Keep it that way.
 | `Fishing.lua` | Fishing catches, fishing skill dings, fish today and the louder splash (see below). |
 | `Streaks.lua` | Login streaks (see below). |
 | `Professions.lua` | Shares my professions and skill levels with the guild and answers `/gnist prof` (see below). |
+| `Loot.lua` | Epic and legendary loot shout-out (see below). |
 | `Caller.lua` | Battleground shot caller ("leder") and the assist button (see below). |
 | `Zones.lua` | Zone presence: one chat line with the online guildies in the zone you just entered (see below). Setting `zonePresence`. |
 | `Bindings.xml` | Key binding "Mål lederens mål" (`CLICK GnistAssistButton:LeftButton`). Loaded by the client from the addon folder; **not** listed in the `.toc`. |
@@ -287,6 +288,25 @@ in commands and output; the surrounding text is Danish.
   each profession with how many known members have it. Every run also sends `PROFREQ`
   (at most once per 60 sec), so the next lookup is fresher.
 
+## Epic loot (`Loot.lua`)
+
+When a member loots an item of quality 4 (epic) or 5 (legendary), every Gnistify user
+sees a random line from `LOOT_MSGS` (`LEGENDARY_MSGS` for quality 5) in their own chat
+window, e.g. `Gnisten lyser lilla! Bo har fået fingrene i [Item]!`, like kills. The
+banner uses `LOOT_BANNERS` / `LEGENDARY_BANNERS`. Settings `loot` (show), `lootSound`
+(`SOUNDKIT.UI_EPICLOOT_TOAST`, 31578 fallback), `lootBanner`, `lootSend` (share mine).
+
+- **Detection:** `CHAT_MSG_LOOT`, matched against patterns built from `LOOT_ITEM_SELF_MULTIPLE`
+  and `LOOT_ITEM_SELF` ("You receive loot: ..."). Crafting ("You create: ...") never
+  matches. Vendor purchases and quest rewards both arrive as `LOOT_ITEM_PUSHED_SELF`
+  ("You receive item: ..."), which can't be told apart, so it is ignored on purpose.
+- **Quality:** `C_Item.GetItemQualityByID`, then `GetItemInfo`, then the link's colour
+  code (all through `ns.Readable`).
+- **Message** on `GnistDing` to `GUILD`: `LOOT;itemLink;quality;itemID`. If that would
+  exceed 250 bytes the link is left empty and receivers build one from the ID. Only the
+  looter sends; receivers ignore their own echo, and the looter sees the line locally
+  once. Append fields only.
+
 ## Shot caller (`Caller.lua`)
 
 For battlegrounds: the group picks one shot caller ("leder"), and everyone presses one
@@ -378,7 +398,7 @@ default to on:
 guild's kills), `killSound` (play `sound.mp3` on a kill), `killBanner` (show kills as a raid-warning banner too), `killsSend` (send my own kills to the guild), `minimapIcon` (the minimap button), `crownSound` (sound for a new leaderboard #1), `eliteFrames` (elite dragon on leaders' portraits), `emojis`, `callerFrame` (open the leader
 window by itself in BGs, arenas and dungeons), `callerFollow` (follow a caller picked by others), `callerSound`
 (ping when the caller changes target, default off), `fishing`, `fishingSound`, `fishingBanner`,
-`fishingSend`, `fishingSplash`, `streaks` (celebrate login streaks), `profShare` (share my professions), `zonePresence` (list guildies in the zone I enter).
+`fishingSend`, `fishingSplash`, `streaks` (celebrate login streaks), `profShare` (share my professions), `zonePresence` (list guildies in the zone I enter), `loot`, `lootSound`, `lootBanner`, `lootSend`.
 
 | Command | Effect |
 |---|---|
