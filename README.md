@@ -53,7 +53,7 @@ En WoW-addon til guilden **Gnisterne** på WoW Forever. Længe leve gnisten!
 
 | Kommando | Hvad den gør |
 |---|---|
-| `/gnist` | Åbner indstillinger, hvor du kan slå hver funktion til og fra |
+| `/gnist` | Åbner indstillingerne (Indstillinger → AddOns → Gnistify), hvor du kan slå hver funktion til og fra |
 | `/gnist top` | Viser guildens PvP-tavle |
 | `/gnist reset` | Foreslår at nulstille PvP-tavlen. Alle med Gnistify bliver spurgt, og ved 4 ja starter alle drab forfra |
 | `/gnist fisk` | Viser dagens fangst i guilden |

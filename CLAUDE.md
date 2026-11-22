@@ -48,7 +48,7 @@ All text the players see is in **Danish**. Keep it that way.
 | `Gnistify.toc` | Addon manifest. The file name **must** match the folder name. Lists `SavedVariables: GnistifyDB`. |
 | `Gnistify.lua` | Ding detection, celebration, guild chat post, `/gnist` slash command. |
 | `Emojis.lua` | Chat filter that turns `:gnist:` into a picture. |
-| `Options.lua` | Settings window (`/gnist`) with one checkbox per feature. The same checkboxes are added to the game's Options → AddOns list (`Settings.RegisterCanvasLayoutCategory`, or `InterfaceOptions_AddCategory` as a fallback). To add a setting: give it a default in `ADDON_LOADED` in `Gnistify.lua` and add an entry to `OPTIONS`. |
+| `Options.lua` | Settings UI (`/gnist`, minimap right click). Native: a "Gnistify" category in Options → AddOns with one subcategory per `{ header = ... }` in `OPTIONS` (see "Settings UI" below). Fallback for clients without the vertical-layout Settings API: the old hand-made window and canvas panel. |
 | `Kills.lua` | PvP killing-blow announcements (see below). Shares `ns.PREFIX`, `ns.Short` and `ns.Print` from `Gnistify.lua` through the addon namespace. |
 | `Leaderboard.lua` | World PvP leaderboard ("PvP-tavle") and its sync (see below). |
 | `Minimap.lua` | Minimap button (hand-made, no LibDBIcon): left click PvP-tavle, right click settings, drag to move (`GnistifyDB.minimapAngle`). Tooltip lists title holders (`ns.TitleHolders`). Setting `minimapIcon`. |
@@ -276,6 +276,27 @@ key to target the caller's target.
   target. Plays `SOUNDKIT.MAP_PING` when the caller switches to a new enemy you don't
   have targeted (`callerSound`, at most every 1.5 sec).
 
+## Settings UI (`Options.lua`)
+
+- `OPTIONS` is the single source: `{ header = "..." }` starts a section, `{ key = "...", label = "..." }`
+  is a checkbox bound to `GnistifyDB[key]`, `{ buttons = { { label, func }, ... } }` is a row of
+  buttons. Optional field `tooltip` on a checkbox or a button entry. Keep this format: open pull
+  requests add lines to the table.
+- **Native path** (`BuildNative`): `Settings.RegisterVerticalLayoutCategory("Gnistify")` plus one
+  `RegisterVerticalLayoutSubcategory` per header. Checkboxes use `Settings.RegisterAddOnSetting`
+  bound straight to `GnistifyDB` (modern signature `category, variable, key, tbl, type, name,
+  default`; if that fails, `RegisterProxySetting` with getter/setter), then `Settings.CreateCheckbox`
+  (or `CreateCheckBox`). Buttons are `CreateSettingsButtonInitializer` added with
+  `layout:AddInitializer`. The front page shows the version and the PvP-tavle and leder buttons.
+- **Timing:** registered on `PLAYER_LOGIN`, so `GnistifyDB` (created in `ADDON_LOADED` in
+  `Gnistify.lua`) exists. `Gnistify_ToggleOptions` is `Settings.OpenToCategory` and re-syncs the
+  checkboxes from `GnistifyDB` first (slash commands like `/gnist lyd` change values directly).
+- **Fallback** (`BuildFallback`): used when the vertical-layout API is missing or registration
+  errors. The window height is computed from the rows, no constant to edit.
+- **To add a setting:** give it a default in `ADDON_LOADED` in `Gnistify.lua` (and in
+  `DEFAULT_OFF` in `Options.lua` if the default is off) and add an entry to `OPTIONS`. A new
+  header makes a new subcategory.
+
 ## Settings and commands
 
 Settings are stored in the `GnistifyDB` saved variable, and all of them except `callerSound`
@@ -288,7 +309,7 @@ window by itself in BGs, arenas and dungeons), `callerFollow` (follow a caller p
 
 | Command | Effect |
 |---|---|
-| `/gnist` or `/gnistify` | Open the settings window |
+| `/gnist` or `/gnistify` | Open the settings (Options → AddOns → Gnistify) |
 | `/gnist hjælp` | Show the command list |
 | `/gnist lyd` | Toggle the sound |
 | `/gnist guild` | Toggle the guild chat post when you ding |
