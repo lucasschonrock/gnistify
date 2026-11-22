@@ -131,17 +131,34 @@ end
 
 local function Looter(name) return "|cffff6600" .. name .. "|r" end
 
--- A link from an item ID, for the rare message that was too long for the link
-local function LinkFromID(id, quality)
+-- The game's own name, link and quality for an item ID, or nil while the item
+-- isn't cached on this client.
+local function RealItem(id)
     local getter = (C_Item and C_Item.GetItemInfo) or GetItemInfo
-    if getter then
-        local ok, _, link = pcall(getter, id)
-        link = ok and Readable(link)
-        if type(link) == "string" then return link end
-    end
-    local color = QUALITY_COLORS[quality] or QUALITY_COLORS[EPIC]
-    return "|cff" .. color .. "|Hitem:" .. id .. "|h[Item " .. id .. "]|h|r"
+    if not getter then return nil end
+    local ok, name, link, quality = pcall(getter, id)
+    if not ok then return nil end
+    name, link, quality = Readable(name), Readable(link), Readable(quality)
+    if type(name) ~= "string" or type(link) ~= "string" or type(quality) ~= "number" then return nil end
+    return name, link, quality
 end
+
+-- The link to show for someone else's loot. Never trusts the sender's text:
+-- the quality and colour come from this client's item data. The sender's link
+-- is only used (for random suffixes like "of the Bear") when it is exactly one
+-- plain item link for the same item whose name starts with the real name.
+local function SafeLink(id, sent, realName, realLink)
+    if type(sent) ~= "string" then return realLink end
+    local sentID, text = sent:match("^|c[^|]+|Hitem:(%d+)[%d:%-]*|h%[([^|%]]+)%]|h|r$")
+    if tonumber(sentID) ~= id or text:sub(1, #realName) ~= realName then return realLink end
+    local color = realLink:match("^(|c[^|]+)")
+    local body = sent:match("^|c[^|]+(|H.*)$")
+    return color and body and (color .. body) or realLink
+end
+
+-- Messages waiting for their item to be loaded: [id] = { { looter, link, time }, ... }
+local waiting = {}
+local WAIT_ITEM = 5   -- seconds to wait for the item data, then drop the message
 
 local function Show(name, link, quality)
     if not GnistifyDB or not GnistifyDB.loot then return end
@@ -177,10 +194,45 @@ local function OnMyLoot(msg)
     end
 end
 
+-- Someone else's loot ----------------------------------------------------------
+
+-- Shows it if the item really is epic or better (by this client's item data).
+-- Returns false while the item isn't cached yet.
+local function ShowOthers(looter, id, sent)
+    local name, link, quality = RealItem(id)
+    if not name then return false end
+    if quality >= EPIC then Show(looter, SafeLink(id, sent, name, link), quality) end
+    return true
+end
+
+local function OnOthersLoot(looter, msg)
+    -- ";" never appears in item links. The sender's quality field is ignored.
+    local _, link, _, id = strsplit(";", msg)
+    id = tonumber(id) or ItemID(link)
+    if not id or id < 1 then return end
+    if ShowOthers(looter, id, link) then return end
+    -- Not cached: ask the game for it and wait for GET_ITEM_INFO_RECEIVED
+    if not (C_Item and C_Item.RequestLoadItemDataByID and C_Timer) then return end
+    local list = waiting[id] or {}
+    waiting[id] = list
+    if #list >= 5 then return end
+    list[#list + 1] = { looter = looter, link = link }
+    pcall(C_Item.RequestLoadItemDataByID, id)
+    C_Timer.After(WAIT_ITEM, function() waiting[id] = nil end)   -- give up
+end
+
+local function OnItemInfo(id)
+    id = tonumber(Readable(id))
+    local list = id and waiting[id]
+    if not list then return end
+    waiting[id] = nil
+    for _, w in ipairs(list) do ShowOthers(w.looter, id, w.link) end
+end
+
 -- Events -----------------------------------------------------------------
 
 local f = CreateFrame("Frame")
-for _, event in ipairs({ "CHAT_MSG_LOOT", "CHAT_MSG_ADDON" }) do
+for _, event in ipairs({ "CHAT_MSG_LOOT", "CHAT_MSG_ADDON", "GET_ITEM_INFO_RECEIVED" }) do
     pcall(f.RegisterEvent, f, event)   -- an unknown event must not break the rest
 end
 
@@ -194,16 +246,10 @@ f:SetScript("OnEvent", function(_, event, ...)
         if prefix ~= PREFIX or type(msg) ~= "string" or not msg:find("^LOOT;") then return end
         local looter = ns.Short(sender)
         if not looter or looter == ns.Me() then return end   -- already shown
-        -- ";" never appears in item links
-        local _, link, quality, id = strsplit(";", msg)
-        id = tonumber(id) or ItemID(link)
-        quality = tonumber(quality) or QualityOf(link)
-        if type(quality) ~= "number" or quality < EPIC then return end
-        if not link or link == "" then
-            if not id then return end
-            link = LinkFromID(id, quality)
-        end
-        Show(looter, link, quality)
+        OnOthersLoot(looter, msg)
+
+    elseif event == "GET_ITEM_INFO_RECEIVED" then
+        OnItemInfo((...))
     end
 end)
 

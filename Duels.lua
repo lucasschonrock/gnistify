@@ -180,9 +180,15 @@ local function OnSystemMessage(msg)
     end
 end
 
-local function OnAddonMessage(msg)
+-- A duel from the guild. Only a participant may report it (the winner, or the
+-- loser when the winner has no addon), and both must be guild members, so
+-- nobody can hand out duel wins to others.
+local function OnAddonMessage(msg, sender)
     local _, winner, loser, fled = strsplit(";", msg)
     if type(winner) ~= "string" or winner == "" or type(loser) ~= "string" or loser == "" then return end
+    winner, loser = Resolve(winner), Resolve(loser)
+    if not winner or not loser then return end
+    if sender ~= winner and sender ~= loser then return end
     heardFrom[winner .. "\n" .. loser] = ServerTime()
     ns.RecordDuel(winner, loser, fled == "1")
 end
@@ -202,7 +208,8 @@ f:SetScript("OnEvent", function(_, event, ...)
         prefix, msg, channel = Readable(prefix), Readable(msg), Readable(channel)
         if prefix ~= PREFIX or channel ~= "GUILD" or type(msg) ~= "string" then return end
         if not msg:find("^DUEL;") then return end
-        if ns.Short(sender) == ns.Me() then return end   -- my own echo
-        OnAddonMessage(msg)
+        sender = ns.Short(Readable(sender))
+        if not sender or sender == ns.Me() then return end   -- my own echo
+        OnAddonMessage(msg, sender)
     end
 end)

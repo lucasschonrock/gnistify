@@ -240,7 +240,9 @@ Duels between two guild members are shown with a random Danish comment and count
   counted once per 20 sec (`DEDUPE_WINDOW`), so the system and addon message never both count.
 - **Message:** `DUEL;winner;loser;fled` on `GnistDing` to `GUILD` (`fled` 1 = the loser ran
   away). Append fields only. Only the live duel is sent; offline friends catch up through the
-  `LB;` record sync.
+  `LB;` record sync. **Receivers only accept it from the winner or the loser**, and both names
+  must resolve to guild members (`Resolve`), so nobody can hand out duel wins to others.
+  (The `LB;` sync itself still trusts any sender, for kills and duels alike.)
 - **Display:** `DUEL_MSGS` / `FLED_MSGS` (`{winner}`, `{loser}`) plus the winner's duel-win total.
   Setting `duels` turns off showing them; counting continues.
 
@@ -332,9 +334,14 @@ banner uses `LOOT_BANNERS` / `LEGENDARY_BANNERS`. Settings `loot` (show), `lootS
 - **Quality:** `C_Item.GetItemQualityByID`, then `GetItemInfo`, then the link's colour
   code (all through `ns.Readable`).
 - **Message** on `GnistDing` to `GUILD`: `LOOT;itemLink;quality;itemID`. If that would
-  exceed 250 bytes the link is left empty and receivers build one from the ID. Only the
-  looter sends; receivers ignore their own echo, and the looter sees the line locally
-  once. Append fields only.
+  exceed 250 bytes the link is left empty. Only the looter sends; receivers ignore their
+  own echo, and the looter sees the line locally once. Append fields only.
+- **Receivers never trust the sender's text** (`OnOthersLoot`): the quality field is
+  ignored; name, link and quality come from this client's `GetItemInfo(itemID)`, and
+  below epic is dropped. An uncached item is requested (`C_Item.RequestLoadItemDataByID`)
+  and shown on `GET_ITEM_INFO_RECEIVED`, or dropped after 5 sec. The sent link is only
+  kept (for random suffixes) if it is one plain item link for the same ID whose name
+  starts with the real name, and it gets the real colour (`SafeLink`).
 
 ## Shot caller (`Caller.lua`)
 
