@@ -2,6 +2,7 @@
 ## Title: |cffffcc00Gnist|r|cffff6600ify|r
 ## Notes: Ding, PvP-drab, fiskeri og :gnist: for guilden Gnisterne. Længe leve gnisten!
 ## Author: Gnisterne
+## IconTexture: Interface\AddOns\Gnistify\emojis\gnist
 ## Version: @project-version@
 ## SavedVariables: GnistifyDB
 ## X-Curse-Project-ID: 1796132
