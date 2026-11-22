@@ -233,6 +233,16 @@ f:SetScript("OnEvent", function(_, event, ...)
         if db.lootSound == nil then db.lootSound = true end
         if db.lootBanner == nil then db.lootBanner = true end
         if db.lootSend == nil then db.lootSend = true end
+        for _, k in ipairs({ "nordvest", "nordvestSound", "nordvestBanner", "nordvestMarks",
+            "nordvestSend", "nordvestGuildChat" }) do
+            if db[k] == nil then db[k] = true end
+        end
+        if db.tracking == nil then db.tracking = false end
+        if db.trackHerbs == nil then db.trackHerbs = true end
+        if db.trackMinerals == nil then db.trackMinerals = true end
+        if db.trackHumanoids == nil then db.trackHumanoids = true end
+        if db.trackQuiet == nil then db.trackQuiet = true end
+        if db.trackOnlyMoving == nil then db.trackOnlyMoving = false end
         if C_ChatInfo and C_ChatInfo.RegisterAddonMessagePrefix then
             C_ChatInfo.RegisterAddonMessagePrefix(PREFIX)
         elseif RegisterAddonMessagePrefix then
@@ -354,6 +364,10 @@ SlashCmdList.GNISTIFY = function(input)
         ns.ZoneCommand(rest)
     elseif cmd == "zoner" or cmd == "zones" then
         ns.ZonesCommand()
+    elseif cmd == "spor" or cmd == "tracking" then
+        ns.TrackingCommand(rest)
+    elseif cmd == "nordvest" or cmd == "nv" or cmd == "kos" then
+        ns.NordvestCommand(rest)
     elseif cmd == "emojis" or cmd == "emoji" then
         Gnistify_ListEmojis()
     elseif cmd == "" then
@@ -373,6 +387,8 @@ SlashCmdList.GNISTIFY = function(input)
         Print("  /gnist her    - vis guildens gnister i din zone")
         Print("  /gnist her <zone> - vis gnister i en bestemt zone")
         Print("  /gnist zoner  - vis hvor mange gnister der er online i hver zone")
+        Print("  /gnist nordvest - vis Nordvestlisten (kill on sight); /gnist nordvest hjælp for mere")
+        Print("  /gnist spor   - skift sporing automatisk til/fra (hvert 5. sek)")
         Print("  /gnist emojis - vis alle :emojis: du kan skrive i chatten")
         Print("  /gnist streak - vis din streak (dage i træk)")
         Print("  /gnist leder  - vælg dit mål som leder (eller åbn leder-vinduet)")

@@ -26,6 +26,17 @@ local OPTIONS = {
         { label = "Åbn PvP-tavle", func = function() ns.ToggleLeaderboard() end },
     } },
     { key = "minimapIcon", label = "Vis gnist-knap ved minimap" },
+    { header = "Nordvestlisten" },
+    { key = "nordvest",          label = "Advar når jeg ser en fra Nordvestlisten",
+      tooltip = "Nordvestlisten er guildens kill on sight-liste. Højreklik en spiller og vælg \"Sæt på Nordvestlisten\"." },
+    { key = "nordvestSound",     label = "Spil lyd ved advarsel" },
+    { key = "nordvestBanner",    label = "Stor tekst midt på skærmen ved advarsel" },
+    { key = "nordvestMarks",     label = "Rødt kranie over navnepladen og på target" },
+    { key = "nordvestSend",      label = "Fortæl guilden hvor jeg spotter dem" },
+    { key = "nordvestGuildChat", label = "Skriv i guild chat når jeg tilføjer eller fjerner nogen" },
+    { buttons = {
+        { label = "Vis Nordvestlisten", func = function() ns.NordvestList() end },
+    } },
     { header = "Fiskeri" },
     { key = "fishing",       label = "Vis guildens fangster og fiske-dings" },
     { key = "fishingSound",  label = "Spil lyd ved store fangster" },
@@ -49,6 +60,15 @@ local OPTIONS = {
         { label = "Åbn leder-vindue", func = function() ns.OpenCallerWindow() end },
         { label = "Lav makro",        func = function() ns.MakeCallerMacro() end },
     } },
+    { header = "Sporing" },
+    { key = "tracking",       label = "Skift sporing automatisk (uden for kamp)",
+      tooltip = "Skifter mellem de valgte sporinger på minimap. Kun dem din karakter kender er med. Holder pause i kamp, byer og dungeons." },
+    { key = "trackHerbs",     label = "Find Herbs" },
+    { key = "trackMinerals",  label = "Find Minerals" },
+    { key = "trackHumanoids", label = "Track Humanoids (hunter, druid i Cat Form)" },
+    { key = "trackQuiet",     label = "Ingen lyd når sporingen skifter" },
+    { key = "trackOnlyMoving", label = "Skift kun når jeg løber eller rider",
+      tooltip = "Skiftet starter global cooldown. Sådan sker det kun mens du er på vej et sted hen." },
     { header = "Guild" },
     { key = "zonePresence", label = "Vis gnister i zonen når jeg skifter zone" },
     { header = "Chat" },
@@ -56,7 +76,7 @@ local OPTIONS = {
 }
 
 -- Everything defaults to on, except these (keep in step with ADDON_LOADED in Gnistify.lua).
-local DEFAULT_OFF = { callerSound = true }
+local DEFAULT_OFF = { callerSound = true, tracking = true, trackOnlyMoving = true }
 
 -- Runs after a setting changed, so modules can react at once.
 local function AfterChange()
@@ -64,6 +84,7 @@ local function AfterChange()
     if ns.RefreshFishing then ns.RefreshFishing() end
     if ns.RefreshMinimap then ns.RefreshMinimap() end
     if ns.RefreshElite then pcall(ns.RefreshElite) end
+    if ns.RefreshNordvest then pcall(ns.RefreshNordvest) end
 end
 
 -- Native settings (retail Settings API) ------------------------------------

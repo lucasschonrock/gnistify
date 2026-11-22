@@ -52,7 +52,7 @@ All text the players see is in **Danish**. Keep it that way.
 | `Kills.lua` | PvP killing-blow announcements (see below). Shares `ns.PREFIX`, `ns.Short` and `ns.Print` from `Gnistify.lua` through the addon namespace. |
 | `Leaderboard.lua` | World PvP leaderboard ("PvP-tavle") and its sync (see below). |
 | `Duels.lua` | Guild-vs-guild duel detection, chat comments and `DUEL;` sync; the totals live in the PvP leaderboard (see below). |
-| `Minimap.lua` | Minimap button (hand-made, no LibDBIcon): left click PvP-tavle, right click settings, drag to move (`GnistifyDB.minimapAngle`). Tooltip lists title holders (`ns.TitleHolders`). Setting `minimapIcon`. |
+| `Minimap.lua` | Minimap button (hand-made, no LibDBIcon): left click PvP-tavle, right click settings, shift-click or middle click toggles `tracking`, drag to move (`GnistifyDB.minimapAngle`). Tooltip lists title holders (`ns.TitleHolders`). Setting `minimapIcon`. |
 | `Elite.lua` | The classic elite dragon around PvP leaders' portraits (player, party, target frames): gold elite for Gnistkejseren (the user wants the emperor to look strongest), silver winged rare-elite for #1 this month, silver rare for #1 today/week (`ns.EliteKind`). Rare-elite falls back to gold if the client lacks it. Texture coords and placement copied from Leatrix Plus' player chain. Setting `eliteFrames`. |
 | `Fishing.lua` | Fishing catches, fishing skill dings, fish today and the louder splash (see below). |
 | `Streaks.lua` | Login streaks (see below). |
@@ -60,7 +60,9 @@ All text the players see is in **Danish**. Keep it that way.
 | `Loot.lua` | Epic and legendary loot shout-out (see below). |
 | `Caller.lua` | Battleground shot caller ("leder") and the assist button (see below). |
 | `Zones.lua` | Zone presence: one chat line with the online guildies in the zone you just entered (see below). Setting `zonePresence`. |
-| `Bindings.xml` | Key binding "Mål lederens mål" (`CLICK GnistAssistButton:LeftButton`). Loaded by the client from the addon folder; **not** listed in the `.toc`. |
+| `Nordvest.lua` | Nordvestlisten, the guild's kill-on-sight list (see below). |
+| `Tracking.lua` | Automatic tracking switch (herbs / minerals / humanoids) every 5 sec (see below). |
+| `Bindings.xml` | Key bindings "Mål lederens mål" (`CLICK GnistAssistButton:LeftButton`) and "Skift sporing til/fra" (`GNISTIFY_TRACKING`, calls `Gnistify_ToggleTracking`). Loaded by the client from the addon folder; **not** listed in the `.toc`. |
 | `dexter.mp3`, `fire.mp3` | Title sounds for the PvP leaderboard (quieter copies; originals in `art/sounds/`). |
 | `sound.mp3` | The user's own ~1 sec sound, played via `PlaySoundFile` whenever a guild kill is shown (setting `killSound`). |
 | `emojis/gnist.tga` | 64×64 32-bit uncompressed TGA spark (yellow/orange, drawn with a small Python script). |
@@ -246,6 +248,38 @@ Duels between two guild members are shown with a random Danish comment and count
 - **Display:** `DUEL_MSGS` / `FLED_MSGS` (`{winner}`, `{loser}`) plus the winner's duel-win total.
   Setting `duels` turns off showing them; counting continues.
 
+## Nordvestlisten (`Nordvest.lua`)
+
+The guild's kill-on-sight list. The user named it "Nordvestlisten"; keep that name.
+
+- **Adding:** `Menu.ModifyMenu` entries ("Sæt på Nordvestlisten" / "Fjern fra Nordvestlisten")
+  on the PLAYER, TARGET, FOCUS, ENEMY_PLAYER, PARTY, RAID_PLAYER, RAID, FRIEND and CHAT_ROSTER
+  menus (same as `Spy/Watch.lua`). Never for me or a guild member; any other player can go on
+  it (also same-faction). Adding opens the `GNISTIFY_NORDVEST` `StaticPopup` with an optional
+  reason (80 chars). Also `/gnist nordvest tilføj [grund]` (target) or `tilføj <navn>`.
+- **Guild chat:** adding/removing posts a plain line with `{skull}` to guild chat
+  (setting `nordvestGuildChat`), so members without the addon see it.
+- **Alerts** (setting `nordvest`): seeing a listed player as target, mouseover, focus or
+  nameplate gives a chat line from `ALERT_MSGS`, a banner (`nordvestBanner`) and
+  `SOUNDKIT.RAID_WARNING` (`nordvestSound`), at most once per `ALERT_REPEAT` (120 sec) per name.
+  The first to spot him sends `NVSEEN;name;zone` (`nordvestSend`); receivers show
+  "X har spottet Y i Zone" and nobody re-sends within `SEEN_REPEAT`.
+- **Visuals** (`nordvestMarks`): a red skull (raid icon 8 + red glow) above the nameplate
+  (frame parented to `C_NamePlate.GetNamePlateForUnit`, skipped if forbidden), a skull on the
+  target portrait, and tooltip lines (who, when, reason, kills) via `TooltipDataProcessor`.
+- **Kills:** `Kills.lua`'s `Show` calls `ns.NordvestKill(victim, killer)` for every kill (also
+  when showing kills is off), which counts `kills` and prints a `KILL_MSGS` "NORDVEST-DRAB!"
+  line plus `ns.PlayCrownSound("big")`.
+- **Data:** `GnistifyDB.nordvestList[name] = { t, by, removed, kills, class, level, guild, reason,
+  seen, seenBy, seenZone }` (not `GnistifyDB.nordvest`, which is the setting). Removed entries
+  stay as tombstones so the removal spreads; pruned after 60 days. At most 300 entries.
+- **Sync** on `GnistDing` to `GUILD`: `NV;name;t;by;removed;live;kills;class;level;guild;reason`
+  (append fields only; reason is cut to fit 250 bytes). Newer `t` (server time of the last
+  add/remove) wins; `kills` only goes up (max wins). `live` = 1 is shown in chat. `NVREQ` 20 sec
+  after login: everyone queues all records (shuffled, 1.2 sec apart), dropped when someone
+  else sends the same or newer, like the PvP-tavle. Anyone in the guild may add or remove.
+- `/gnist nordvest` (`nv`, `kos`) lists it; `tilføj`, `fjern [navn]`, anything else = help.
+
 ## Fishing (`Fishing.lua`)
 
 For the guild's anglers. Settings `fishing` (show), `fishingSound`, `fishingBanner`,
@@ -426,15 +460,46 @@ with or without the addon; no addon messages. Me is excluded; nobody there = no 
 - **Commands:** `/gnist her` (`zone`) lists my zone now; `/gnist her <zone prefix>` lists
   every matching zone; `/gnist zoner` counts online guildies per zone (most first).
 
+## Tracking switch (`Tracking.lua`)
+
+Like the Forager addon, but small: rotates the minimap tracking between the ticked kinds
+every 5 sec (`DELAY`), out of combat. Setting `tracking` (default **off**).
+
+- **Kinds:** `trackHerbs` (Find Herbs 2383), `trackMinerals` (Find Minerals 2580),
+  `trackHumanoids` (Track Humanoids 19883 hunter, 5225 druid, the druid one only in Cat
+  Form). Account-wide settings; each character only rotates through the ones in its
+  `C_Minimap.GetTrackingInfo` list (spell entries only; town trackers like Innkeeper are ignored; matched by spell ID, then English name), so humanoids
+  are simply absent on non-hunters. Fewer than two = nothing happens.
+- **Switch:** `C_Minimap.SetTracking(index, true)`, checked 1.5 sec later. Pauses in
+  combat, dead, taxi, resting, instances, while casting/channelling or looting, on the
+  spell's cooldown (GCD), and while a tracking that isn't ticked is on (a manual pick is
+  respected). A manual pick (`MINIMAP_UPDATE_TRACKING`) gets a full turn. Skipped
+  entirely while Forager is loaded and enabled.
+- **Safe moments** (`Hold`): each switch starts the GCD, so a due switch is held, without
+  resetting the countdown, while casting or looting, within 3 sec of my own
+  `UNIT_SPELLCAST_SUCCEEDED` (not the tracking cast itself), with an attackable live target,
+  while an enemy player's nameplate (`nameplate1..40`) is shown, and, with `trackOnlyMoving`
+  (default off), while standing still (mounted counts as moving).
+- **Fallback:** if `ADDON_ACTION_BLOCKED/FORBIDDEN` hits a timed switch, or three timed
+  switches don't take, it switches on the next key press instead (a keyboard frame with
+  `SetPropagateKeyboardInput(true)`, checked before the script is set; ability-bound keys,
+  modifiers, Tab, Esc, Enter never switch), until `/reload`. Same idea as Forager.
+- **Quiet:** `trackQuiet` turns `Sound_EnableSFX` off during the switch (not while the
+  fishing splash holds the CVars); `GnistifyDB.trackUnmute` restores it at login after a crash.
+- **Toggle:** shift-click or middle click on the minimap button (tooltip shows the state), the key binding
+  "Skift sporing til/fra", or the checkbox (`ns.ToggleTracking`).
+- `/gnist spor` toggles and prints the rotation and why it's waiting; `/gnist spor til|fra`.
+
 ## Settings and commands
 
-Settings are stored in the `GnistifyDB` saved variable, and all of them except `callerSound`
-default to on:
+Settings are stored in the `GnistifyDB` saved variable, and all of them except `callerSound`,
+`tracking` and `trackOnlyMoving` default to on:
 `dings` (show guild dings at all), `sound`, `banner`, `guildChat`, `kills` (show the
 guild's kills), `killSound` (play `sound.mp3` on a kill), `killBanner` (show kills as a raid-warning banner too), `killsSend` (send my own kills to the guild), `minimapIcon` (the minimap button), `crownSound` (sound for a new leaderboard #1), `eliteFrames` (elite dragon on leaders' portraits), `emojis`, `callerFrame` (open the leader
 window by itself in BGs, arenas and dungeons), `callerFollow` (follow a caller picked by others), `callerSound`
 (ping when the caller changes target, default off), `fishing`, `fishingSound`, `fishingBanner`,
-`fishingSend`, `fishingSplash`, `streaks` (celebrate login streaks), `profShare` (share my professions), `zonePresence` (list guildies in the zone I enter), `loot`, `lootSound`, `lootBanner`, `lootSend`, `duels` (show guild duels in chat).
+`fishingSend`, `fishingSplash`, `streaks` (celebrate login streaks), `profShare` (share my professions), `zonePresence` (list guildies in the zone I enter), `loot`, `lootSound`, `lootBanner`, `lootSend`, `duels` (show guild duels in chat), `tracking`, `trackHerbs`, `trackMinerals`, `trackHumanoids`, `trackQuiet`, `trackOnlyMoving` (tracking switch), `nordvest`, `nordvestSound`,
+`nordvestBanner`, `nordvestMarks`, `nordvestSend`, `nordvestGuildChat` (Nordvestlisten).
 
 | Command | Effect |
 |---|---|
@@ -452,6 +517,8 @@ window by itself in BGs, arenas and dungeons), `callerFollow` (follow a caller p
 | `/gnist prof [profession]` | List guild members with a profession, best first (no argument: how many have each) |
 | `/gnist her [zone]` (`zone`) | List online guildies in my zone, or in zones starting with the given text |
 | `/gnist zoner` | Count of online guildies per zone |
+| `/gnist spor [til\|fra]` | Toggle the automatic tracking switch (every 5 sec) |
+| `/gnist nordvest [tilføj\|fjern] [navn/grund]` (`nv`, `kos`) | Show Nordvestlisten, add the target (or a name), remove someone |
 | `/gnist emojis` | List the available emojis |
 | `/gnist leder [navn\|mig\|ingen]` | Make your target (or the named member, yourself, nobody) the caller; with no target, open the leader window |
 | `/gnist makro` | Create the `GnistMål` macro and put it on the cursor |

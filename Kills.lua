@@ -106,7 +106,11 @@ end
 
 -- assists: comma separated names (as sent), count: the killer's kills today
 local function Show(killer, victim, level, classFile, zone, assists, count)
-    if not GnistifyDB or not GnistifyDB.kills then return end
+    if not GnistifyDB then return end
+    if not GnistifyDB.kills then
+        if ns.NordvestKill then ns.NordvestKill(victim, killer) end   -- still counted
+        return
+    end
     local killerText = "|cffff6600" .. killer .. "|r"
     -- Leaderboard title, e.g. "[Gnistkejseren]" (Leaderboard.lua)
     local title = ns.LeaderTitle and ns.LeaderTitle(killer)
@@ -139,6 +143,8 @@ local function Show(killer, victim, level, classFile, zone, assists, count)
         PlaySoundFile(KILL_SOUND, "Master")
         ns.lastKillSound = GetTime()   -- Leaderboard.lua waits for it before a title sound
     end
+    -- On Nordvestlisten: an extra line and the big sound (Nordvest.lua)
+    if ns.NordvestKill then ns.NordvestKill(victim, killer) end
 end
 
 -- My kills today, per character, kept across /reload and logout.

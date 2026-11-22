@@ -23,6 +23,15 @@ En WoW-addon til guilden **Gnisterne** på WoW Forever. Længe leve gnisten!
   nr. 1 og sølv til dagens og ugens nr. 1. Den ses på dit eget portræt, i gruppen og når du har dem i target. Tavlen deles mellem alle med addonen, også med dem der var offline. Du kan
   også klikke på gnisten ved minimappet (højreklik åbner indstillingerne), og holder du
   musen over den, kan du se, hvem der har titlerne lige nu.
+- **Nordvestlisten:** guildens kill on sight-liste. Højreklik en spiller (target,
+  navneplade eller navn i chatten) og vælg *Sæt på Nordvestlisten*, og skriv evt. hvorfor.
+  Alle med addonen får det at vide, og du skriver det også i guild chat. Når nogen fra
+  listen dukker op (target, mus over, navneplade), kommer der en advarsel i chatten, stort
+  på skærmen og en lyd, og der står et rødt kranie over navnepladen og på target-portrættet.
+  Holder du musen over dem, står der, hvem der satte dem på listen og hvorfor. Den, der
+  spotter dem først, fortæller guilden hvor. Dræber en fra guilden dem, får det et ekstra
+  *NORDVEST-DRAB!*. `/gnist nordvest` viser listen, og `/gnist nordvest fjern <navn>`
+  fjerner nogen. Listen deles med alle, også dem der var offline. Alt kan slås fra i `/gnist`.
 - **Dueller:** når to fra guilden duellerer mod hinanden, står resultatet i chatten med
   en fræk kommentar, fx *"Navn smadrede Navn i en duel!"*. Stikker en af, får han en
   ekstra hård kommentar. Antal vundne dueller står i en ekstra kolonne, **Dueller**, i
@@ -67,6 +76,15 @@ En WoW-addon til guilden **Gnisterne** på WoW Forever. Længe leve gnisten!
   [Item]!"* i chatten, og der spilles en lyd. Teksten skifter fra gang til gang, og
   legendariske ting får ekstra meget begejstring. Håndlavede ting og ting købt hos
   en vendor tæller ikke. Alt kan slås til og fra i `/gnist`.
+- **Skift sporing:** Gnistify kan skifte din sporing på minimap hvert 5. sekund
+  mellem Find Herbs, Find Minerals og Track Humanoids, fx malm og humanoider på en hunter
+  med mining. Kun de sporinger din karakter kender er med, så Track Humanoids betyder
+  intet for andre end hunters (og druider i Cat Form). Holder pause i kamp, byer og
+  dungeons, og venter med at skifte når du har et fjendtligt mål, lige har brugt en
+  evne, eller en fjendtlig spiller er i nærheden (skiftet starter global cooldown).
+  Slået fra som standard: slå det til/fra med shift-klik (eller midterklik) på
+  gnist-knappen ved minimap, med en tast (Key Bindings → Gnistify → "Skift sporing
+  til/fra"), under Sporing i `/gnist` eller med `/gnist spor`. Brug den ikke sammen med Forager.
 - **:gnist:** skriv `:gnist:` i chatten for at vise en lille gnist. Kun dem med addonen
   ser billedet.
 
@@ -92,6 +110,7 @@ En WoW-addon til guilden **Gnisterne** på WoW Forever. Længe leve gnisten!
 | `/gnist her` | Viser guildens gnister i din zone |
 | `/gnist her Zone` | Viser guildens gnister i en zone, der starter med det du skriver (fx `/gnist her stran`) |
 | `/gnist zoner` | Viser hvor mange gnister der er online i hver zone |
+| `/gnist spor` | Slår automatisk skift af sporing til/fra (hvert 5. sekund) |
 | `/gnist hjælp` | Viser alle kommandoer |
 | `/gnist leder` | Gør dit target til leder, eller åbner leder-vinduet |
 | `/gnist leder Navn` / `mig` / `ingen` | Vælger en leder ved navn, dig selv, eller ingen |

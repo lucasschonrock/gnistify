@@ -1,5 +1,5 @@
 -- Gnistify minimap button: left click opens the PvP-tavle, right click the
--- settings. Drag it around the minimap. The tooltip shows who holds the titles.
+-- settings, shift-click or middle click turns the tracking switch on/off. Drag it around the minimap. The tooltip shows who holds the titles.
 -- Built by hand (no LibDBIcon), like Spy's button in Spy/Forever.lua.
 -- Setting: minimapIcon. Position (degrees around the minimap): GnistifyDB.minimapAngle.
 
@@ -35,8 +35,13 @@ local function ShowTooltip(self)
             1, 0.8, 0, 1, 1, 1)
     end
     GameTooltip:AddLine(" ")
+    local on = GnistifyDB and GnistifyDB.tracking
+    GameTooltip:AddDoubleLine("Skift sporing", on and "til" or "fra",
+        1, 0.8, 0, on and 0 or 1, on and 1 or 0.3, on and 0 or 0.3)
+    GameTooltip:AddLine(" ")
     GameTooltip:AddLine("Venstreklik: PvP-tavle", 0.8, 0.8, 0.8)
     GameTooltip:AddLine("Højreklik: indstillinger", 0.8, 0.8, 0.8)
+    GameTooltip:AddLine("Shift-klik / midterklik: sporing til/fra", 0.8, 0.8, 0.8)
     GameTooltip:AddLine("Træk: flyt knappen", 0.6, 0.6, 0.6)
     GameTooltip:Show()
 end
@@ -47,7 +52,7 @@ local function Create()
     button:SetSize(31, 31)
     button:SetFrameStrata("MEDIUM")
     button:SetFrameLevel(8)
-    button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    button:RegisterForClicks("LeftButtonUp", "RightButtonUp", "MiddleButtonUp")
     button:RegisterForDrag("LeftButton")
 
     local bg = button:CreateTexture(nil, "BACKGROUND")
@@ -68,7 +73,10 @@ local function Create()
     button:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
 
     button:SetScript("OnClick", function(self, mouseButton)
-        if mouseButton == "RightButton" then
+        if mouseButton == "MiddleButton" or (mouseButton == "LeftButton" and IsShiftKeyDown()) then
+            ns.ToggleTracking()
+            if GameTooltip:IsOwned(self) then ShowTooltip(self) end
+        elseif mouseButton == "RightButton" then
             Gnistify_ToggleOptions()
         else
             ns.ToggleLeaderboard()

@@ -1,7 +1,11 @@
-<!-- Gnistify key binding: "Mål lederens mål" (target the shot caller's target).
+<!-- Gnistify key bindings: "Mål lederens mål" (target the shot caller's target)
+     and "Skift sporing til/fra" (label in Tracking.lua).
      Not listed in Gnistify.toc: the client loads Bindings.xml from the addon
      folder by itself. The label globals are set in Caller.lua. -->
 <Bindings>
 	<Binding name="CLICK GnistAssistButton:LeftButton" category="BINDING_HEADER_GNISTIFY">
+	</Binding>
+	<Binding name="GNISTIFY_TRACKING" category="BINDING_HEADER_GNISTIFY">
+		Gnistify_ToggleTracking()
 	</Binding>
 </Bindings>

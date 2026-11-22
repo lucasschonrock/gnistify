@@ -20,4 +20,6 @@ Professions.lua
 Loot.lua
 Caller.lua
 Zones.lua
+Tracking.lua
+Nordvest.lua
 Options.lua
